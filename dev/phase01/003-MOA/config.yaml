@@ -1,0 +1,34 @@
+phase: Phase01
+
+model_config:
+  number_of_trees: 1000
+  predictors: null
+  class_properties: land_cover_values
+
+viewport:
+  file_name: ../000-data/phase01_viewport.shp
+  driver: ESRI Shapefile
+
+training_data:
+  file_name: ../000-data/training_data.gdb
+  layer: training_points_700
+  driver: FileGDB
+
+assets:
+  datacube:
+    S1:
+      - COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015452_20180609T015517_011290_014BA0_39FD
+      - COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015454_20180715T015519_011815_015BE0_0362
+      - COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015503_20180913T015528_012690_0176B4_78B3
+    S2:
+      DC: projects/fpca-336015/assets/williston-cba
+
+  benchmark:
+    S1:
+      - COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180517T142651_20180517T142716_010962_014115_CA58
+      - COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180728T142655_20180728T142720_012012_0161D6_96BF
+    S2:
+      - COPERNICUS/S2/20180519T191909_20180519T192621_T10UEF
+      - COPERNICUS/S2/20180728T191909_20180728T192508_T10UEF
+
+  dem: NASA/NASADEM_HGT/001
