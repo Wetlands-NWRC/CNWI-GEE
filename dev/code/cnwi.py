@@ -1,6 +1,6 @@
 import os
 
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 import ee
 import eelib
@@ -11,36 +11,26 @@ from pipelines import eerfpl, factories
 
 load_dotenv()
 
+def cfg(filename)-> Dict[str, Any]:
+    with open(filename) as stream:
+            CFG: Dict[str, Any] = yaml.safe_load(stream=stream)
+
+    return CFG
 
 def datacube():
     pass
 
-def benchmark(cfg_filename: str):
-    with open(cfg_filename) as stream:
-            CFG: Dict[str, Any] = yaml.safe_load(stream=stream)
-
-    cfg_viewport = CFG['viewport']
-    viewport = ee.FeatureCollection.from_file(
-        filename=cfg_viewport.get('file_name'),
-        driver=cfg_viewport.get('driver')
-    ).geometry()
-
-    cfg_training_data = CFG['training_data']
-    training_data = ee.FeatureCollection.from_file(
-        filename=cfg_training_data.get('file_name'),
-        driver=cfg_training_data.get('driver', None),
-        layer=cfg_training_data.get('layer', None)
-    )
+def benchmark(cfg: Dict[str, any], training_data: ee.FeatureCollection, viewport: ee.Geometry) -> Tuple[eerfpl.eeRFPipeline, Dict[str, Any]]:
 
     s1_imgs = factories.s1_factory(
-        asset_ids=CFG['assets']['benchmark']['S1']
+        asset_ids=cfg['assets']['benchmark']['S1']
     )
 
     s2_imgs = factories.s2_factory(
-        asset_ids=CFG['assets']['benchmark']['S2']
+        asset_ids=cfg['assets']['benchmark']['S2']
     )
 
-    dem = ee.Image(CFG['assets']['dem']).select('elevation')
+    dem = ee.Image(cfg['assets']['dem']).select('elevation')
 
     pipeline = eerfpl.BenchmarkPipeline(
         sar=s1_imgs,
@@ -52,14 +42,11 @@ def benchmark(cfg_filename: str):
     # Export Settings
     pipeline.bucket = os.environ.get('BUCKET')
     pipeline.root = os.environ.get('ROOT')
-    pipeline.caseNumber = CFG['phase']
+    pipeline.caseNumber = cfg['phase']
     pipeline.region = viewport
 
-    pipeline.run()
-
-    pipeline.logging()
-
-    pipeline.exportToCloud()
+    output = pipeline.run()
+    return pipeline, output
 
 def datacube_lsc():
     viewport = ee.FeatureCollection.from_file(
@@ -99,7 +86,9 @@ def datacube_lsc():
     pipeline.region = viewport
 
     output = pipeline.run()
+    return pipeline, output
 
+def export_results(pipeline: eerfpl.eeRFPipeline) -> None:
     pipeline.logging()
-
     pipeline.exportToCloud()
+    return None

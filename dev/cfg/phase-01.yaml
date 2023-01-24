@@ -1,4 +1,4 @@
-phase: Phase03
+phase: Phase01
 
 model_config:
   number_of_trees: 1000
@@ -6,12 +6,13 @@ model_config:
   class_properties: land_cover_values
 
 viewport:
-  file_name: ../data/phase01_viewport.shp
+  file_name: ../000-data/phase01_viewport.shp
   driver: ESRI Shapefile
 
 training_data:
-  file_name: ../data/willistonA_no_floodplain.shp
-  driver: ESRI Shapefile
+  file_name: ../000-data/training_data.gdb
+  layer: training_points_700
+  driver: FileGDB
 
 assets:
   datacube:
