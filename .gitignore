@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# project specific
+*.clr
+dev/results/phase01/
+dev/results/phase02/
+dev/results/phase03/benchmark/
