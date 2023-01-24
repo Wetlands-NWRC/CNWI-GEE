@@ -17,8 +17,38 @@ def cfg(filename)-> Dict[str, Any]:
 
     return CFG
 
-def datacube():
-    pass
+def run_datacube(cfg: Dict[str, any], training_data: ee.FeatureCollection, viewport: ee.Geometry) -> Tuple[eerfpl.eeRFPipeline, Dict[str, Any]]:
+    s1_imgs = factories.s1_factory(
+        asset_ids=cfg['assets']['datacube']['S1']
+    )
+
+    datacube = factories.DatacubeCollection(
+        arg=cfg['assets']['datacube']['S2']['DC']
+    )
+
+    s2_imgs = factories.datacube_img_factory(
+        datacube_collection=datacube,
+        viewport=viewport
+    )
+
+    dem = ee.Image(cfg['assets']['dem']).select('elevation')
+
+    pipeline = eerfpl.DataCubePipeline(
+        sar=s1_imgs,
+        optical=s2_imgs,
+        dem=dem,
+        training_data=training_data
+    )
+
+    # Export Settings
+    pipeline.bucket = os.environ.get('BUCKET')
+    pipeline.root = os.environ.get('ROOT')
+    pipeline.caseNumber = cfg['phase']
+    pipeline.region = viewport
+
+    output = pipeline.run()
+    pipeline.logging(datacube)
+    return pipeline, output
 
 def benchmark(cfg: Dict[str, any], training_data: ee.FeatureCollection, viewport: ee.Geometry) -> Tuple[eerfpl.eeRFPipeline, Dict[str, Any]]:
 
