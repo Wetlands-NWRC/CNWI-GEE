@@ -47,7 +47,7 @@ def run_datacube(cfg: Dict[str, any], training_data: ee.FeatureCollection, viewp
     pipeline.region = viewport
 
     output = pipeline.run()
-    pipeline.logging(datacube)
+    # pipeline.logging(datacube)
     return pipeline, output
 
 def benchmark(cfg: Dict[str, any], training_data: ee.FeatureCollection, viewport: ee.Geometry) -> Tuple[eerfpl.eeRFPipeline, Dict[str, Any]]:
