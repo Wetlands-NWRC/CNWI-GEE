@@ -78,25 +78,14 @@ def benchmark(cfg: Dict[str, any], training_data: ee.FeatureCollection, viewport
     output = pipeline.run()
     return pipeline, output
 
-def datacube_lsc():
-    viewport = ee.FeatureCollection.from_file(
-        filename = "../000-data/viewport.shp"
-    ).geometry()
-
-    training_data = ee.FeatureCollection.from_file(
-        filename="../../phase01/000-data/training_data.gdb",
-        driver='FileGDB',
-        layer='training_points_700'
-    )
-
-    with open("../data/systems.txt", 'r') as file:
+def run_datacube_lsc(viewport, training_data, system_txt, dc_collection, phase: str = None):
+    phase = 'phaseXX' if phase is None else phase
+    with open(system_txt, 'r') as file:
         ids = [line.strip() for line in file.readlines()]
 
     ee_images = [ee.Image(f'COPERNICUS/S1_GRD/{_}') for _ in ids]
 
-    datacube = factories.DatacubeCollection(
-        arg="projects/fpca-336015/assets/williston-cba"
-    ).filterBounds(viewport)
+    datacube = dc_collection.filterBounds(viewport)
 
     s1_collection = ee.ImageCollection(ee_images)
 
@@ -112,7 +101,7 @@ def datacube_lsc():
     # Export Settings
     pipeline.bucket = os.environ.get('BUCKET')
     pipeline.root = os.environ.get('ROOT')
-    pipeline.caseNumber = "Phase02"
+    pipeline.caseNumber = phase,
     pipeline.region = viewport
 
     output = pipeline.run()

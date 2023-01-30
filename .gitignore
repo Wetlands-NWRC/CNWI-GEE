@@ -132,5 +132,6 @@ dmypy.json
 *.clr
 dev/results/phase01/
 dev/results/phase02/
-dev/results/phase03/benchmark/
-dev/results/phase03/datacube/
+dev/results/phase0*/benchmark/
+dev/results/phase0*/datacube/
+*.qgz
