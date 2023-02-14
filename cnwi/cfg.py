@@ -4,7 +4,7 @@ from dataclasses import InitVar, dataclass
 from datetime import datetime
 
 
-from eelib import bands
+import bands
 
 
 @dataclass
@@ -33,5 +33,5 @@ class DataCubeCfg:
             'fall': {'band_prefix': 'c_fall_b.*', 'start': dates[4], 'end': dates[5]}
         }
 
-        self.src_bands = [str(_.name) for _ in bands.WillistonCBA]
-        self.dest_bands = [str(_.value) for _ in bands.WillistonCBA]
+        self.src_bands = [str(_.name) for _ in bands.DataCubeBands]
+        self.dest_bands = [str(_.value) for _ in bands.DataCubeBands]
