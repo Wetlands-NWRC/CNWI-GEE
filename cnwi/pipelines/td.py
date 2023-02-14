@@ -14,5 +14,11 @@ class TrainingData:
     #TODO create sample config / expose sampling arguments to user
     def generate_samples(self, stack: ee.Image) -> None:
         self.samples = stack.sampleRegions(
-            
+            collection = self.collection,
+            properties = None,
+            scale = 10,
+            projection = None,
+            tileScale = None,
+            geometries = False
         )
+        return None
