@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 
+import pandas as pd
 
 class LandValues(enum.Enum):
     Bog = 1
@@ -37,8 +38,9 @@ class LandCovers:
 
     @property
     def colours(self) -> dict[str, str]:
-        return {str(obj.name): str(obj.value) for obj in LandColours
+        c = {str(obj.name): str(obj.value) for obj in LandColours
                 if str(obj.name) in self.labels}
+        return dict(sorted(c.items(), key=lambda item: item[1])) 
 
     @property
     def palette(self) -> list[str]:
@@ -46,4 +48,31 @@ class LandCovers:
             f'#{self.colours.get(label)}' for label in self.labels
         ]
         return pallette
+
+
+class CMAP(pd.DataFrame):
+        
+    def __init__(self, land_cover: LandCovers) -> None:
+        
+        value, r, g, b = [], [], [], []
+        
+        for idx, hex in enumerate(land_cover.colours.values(), start=1):
+            rgb: tuple[int] = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
+            r.append(rgb[0]); g.append(rgb[1]); b.append(rgb[2]); value.append(idx)
+        
+        data={"value": value, "red": r, "green": g, "blue": b}
+        super().__init__(pd.DataFrame(data=data))
+    
+    def to_clr(self, filename: str):
+        self.to_csv(
+            path_or_buf=filename,
+            sep=" ",
+            header=False,
+            index=False
+        )
+        
+                
+        
+        
+        
     

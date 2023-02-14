@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import InitVar, dataclass
+from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 
+import ee
 
 import bands
 
@@ -35,3 +36,27 @@ class DataCubeCfg:
 
         self.src_bands = [str(_.name) for _ in bands.DataCubeBands]
         self.dest_bands = [str(_.value) for _ in bands.DataCubeBands]
+
+
+@dataclass
+class RandomForestCFG:
+    stack: stack._Stack
+    training_data: td.TrainingData
+    n_trees: int = 1000
+    var_per_split: int = None
+    min_leaf: int = 1
+    bag_fraction: float = 0.5
+    max_nodes: int = None
+    seed: int = 0
+    mode: str = field(default="CLASSIFICATION")
+    predictors: list[str] = field(default_factory=list)
+    
+    def __post_init__(self):
+        _valid_modes = ['CLASSIFICATION', 'PROBABILITY', 'REGRESSION']
+        in_mode = self.mode.upper()
+        if in_mode not in _valid_modes:
+            raise TypeError(f"{self.mode} is not a valid mode")
+        else:
+            self.mode = in_mode
+        
+    

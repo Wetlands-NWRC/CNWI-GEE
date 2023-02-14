@@ -1,4 +1,7 @@
 from __future__ import annotations
+from dataclasses import dataclass
+
+import ee
 
 from pipelines import cfg
 
@@ -11,6 +14,13 @@ from eelib import classifiers as rf
 
 # DataCube Pipeline will work off of Image Collections. Sentinel - 1 is a pre selected collection of 
 # images and is not dynamically generated
+
+@dataclass
+class RFOutput:
+    model: "ee.Classifier"
+    classified: ee.Image
+    samples: ee.FeatureCollection
+
 
 class CNWI:
     def __init__(self, config: cfg.RandomForestCFG) -> None:
@@ -30,7 +40,7 @@ class CNWI:
             if condition:
                 raise Exception("defined predictors not in the current stack")
         
-    def run_pipeline(self) -> cfg.RFModel:
+    def run_pipeline(self) -> cfg.RFOutput:
         model = rf.RandomForest(
             n_trees=self.config.n_trees,
             var_per_split=self.config.var_per_split,
@@ -48,7 +58,7 @@ class CNWI:
         
         classified = self.config.stack.classify(model.model)
         
-        return cfg.RFModel(
+        return cfg.RFOutput(
             model=model.model,
             classified=classified,
             samples=self.config.training_data.samples
