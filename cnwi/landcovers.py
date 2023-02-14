@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import enum
 
-from dataclasses import dataclass
-
 
 class LandValues(enum.Enum):
     Bog = 1
