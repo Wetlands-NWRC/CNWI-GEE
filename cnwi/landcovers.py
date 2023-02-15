@@ -5,25 +5,25 @@ import enum
 import pandas as pd
 
 class LandValues(enum.Enum):
-    Bog = 1
-    Fen = 2
-    Forest = 3
-    Marsh = 4
-    Shallow_Water = 5
-    Swamp = 6
-    Upland = 7
-    Water = 8    
+    BOG = 1
+    FEN = 2
+    FOREST = 3
+    MARSH = 4
+    SHALLOW_WATER = 5
+    SWAMP = 6
+    UPLAND = 7
+    WATER = 8    
 
 
 class LandColours(enum.Enum):
-    Bog = 'A52A2A'
-    Fen = 'FFF600'
-    Forest = 'FF0000'
-    Marsh = '8FBC8F'
-    Shallow_Water = '7CFC00'
-    Swamp = '008000'
-    Upland = 'FF0001'
-    Water = '0000FF'
+    BOG = 'A52A2A'
+    FEN = 'FFF600'
+    FOREST = 'FF0000'
+    MARSH = '8FBC8F'
+    SHALLOW_WATER = '7CFC00'
+    SWAMP = '008000'
+    UPLAND = 'FF0001'
+    WATER = '0000FF'
 
 
 class LandCovers:

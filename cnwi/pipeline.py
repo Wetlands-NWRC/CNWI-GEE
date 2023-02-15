@@ -3,17 +3,11 @@ from dataclasses import dataclass
 
 import ee
 
-from pipelines import cfg
+import cfg
+import inputs
 
-from eelib import stack
 from eelib import classifiers as rf
 
-# Benchmark Pipeline and DataCubePipeline
-
-# Benchmark works off selected image assets from native earth engine collections
-
-# DataCube Pipeline will work off of Image Collections. Sentinel - 1 is a pre selected collection of 
-# images and is not dynamically generated
 
 @dataclass
 class RFOutput:
@@ -28,7 +22,7 @@ class CNWI:
     
     def _validate(self):
         # setup the pipeline
-        if not isinstance(self.config.stack, stack._Stack):
+        if not isinstance(self.config.stack, inputs._Stack):
             raise TypeError
         
         if self.config.training_data.samples is None:

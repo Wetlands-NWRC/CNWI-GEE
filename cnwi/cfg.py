@@ -5,7 +5,8 @@ from datetime import datetime
 
 import ee
 
-import bands
+import td
+import bands as dc_bands
 
 
 @dataclass
@@ -34,8 +35,8 @@ class DataCubeCfg:
             'fall': {'band_prefix': 'c_fall_b.*', 'start': dates[4], 'end': dates[5]}
         }
 
-        self.src_bands = [str(_.name) for _ in bands.DataCubeBands]
-        self.dest_bands = [str(_.value) for _ in bands.DataCubeBands]
+        self.src_bands = [str(_.name) for _ in dc_bands.DataCubeBands]
+        self.dest_bands = [str(_.value) for _ in dc_bands.DataCubeBands]
 
 
 @dataclass

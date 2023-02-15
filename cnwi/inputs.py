@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from abc import ABC
+
 import ee
 
 from eelib import stack
@@ -40,6 +42,10 @@ def parse_s1_imgs(collection: S1Collection64):
         imgs = [ee.Image(_) for _ in collection.toList(collection.size()).getInfo()]
 
     return imgs
+
+
+class _Stack(ABC):
+    pass
 
 
 class S1Collection64:
