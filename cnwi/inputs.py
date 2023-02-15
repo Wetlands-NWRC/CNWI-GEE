@@ -33,13 +33,14 @@ def parse_season(collection: DataCubeCollection) -> list[ee.Image]:
 
 
 def parse_s1_imgs(collection: S1Collection64):
-    unique_dates = collection.aggregate_array('date').distinct().getInfo()
-    
-    if len(unique_dates) > 3:
-        imgs = [collection.filter(f'date == "{date}"').mean()
-               for date in unique_dates]
+    dates: list[str] = collection.aggregate_array('date').getInfo()
+   
+    if len(dates) > 3:
+        imgs = [collection.filter(f'date == "{date}"').mean().set('date', date)
+               for date in sorted(set(dates))]
     else:
-        imgs = [ee.Image(_) for _ in collection.toList(collection.size()).getInfo()]
+        imgs = [ee.Image(_.get('id')).set('date', dates[idx]) for idx, _ 
+                in enumerate(collection.toList(collection.size()).getInfo())]
 
     return imgs
 
@@ -52,14 +53,14 @@ class S1Collection64:
     
     def __new__(cls, viewport: ee.Geometry = None) -> ee.ImageCollection:
         asset_ids = [
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015452_20180609T015517_011290_014BA0_39FD"
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015517_20180609T015542_011290_014BA0_2658"
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015542_20180609T015616_011290_014BA0_EE30"
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015454_20180715T015519_011815_015BE0_0362"
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015519_20180715T015544_011815_015BE0_D8D7"
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015544_20180715T015618_011815_015BE0_8287"
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015503_20180913T015528_012690_0176B4_78B3"
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015528_20180913T015553_012690_0176B4_0EB4"
+            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015452_20180609T015517_011290_014BA0_39FD",
+            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015517_20180609T015542_011290_014BA0_2658",
+            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015542_20180609T015616_011290_014BA0_EE30",
+            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015454_20180715T015519_011815_015BE0_0362",
+            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015519_20180715T015544_011815_015BE0_D8D7",
+            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015544_20180715T015618_011815_015BE0_8287",
+            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015503_20180913T015528_012690_0176B4_78B3",
+            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015528_20180913T015553_012690_0176B4_0EB4",
             "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015553_20180913T015613_012690_0176B4_EB44"
         ]
         
@@ -86,11 +87,11 @@ class DataCubeCollection:
     
 
 class DataCubeStack(_Stack):
-    def __new__(cls, datacubecollection, s1: ee.ImageCollection, dem: ee.Image) -> ee.Image:
+    def __new__(cls, optical: DataCubeCollection, s1: ee.ImageCollection, dem: ee.Image) -> ee.Image:
         # apply filtering
         # create derivaitves
         
-        opticals: list[ee.Image] = parse_season(datacubecollection)
+        opticals: list[ee.Image] = parse_season(optical.mean())
         ndvis = eefuncs.batch_create_ndvi(opticals)
         savis = eefuncs.batch_create_savi(opticals)
         tassels = eefuncs.batch_create_tassel_cap(opticals)
@@ -109,5 +110,21 @@ class DataCubeStack(_Stack):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         
         return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope)
-    
+
+
+class Williston_Data_Cube_Stack(DataCubeStack):
+    def __init__(self, viewport: ee.Geometry) -> None:
+        
+        dc_imgs = DataCubeCollection(
+            asset_id=None,
+            viewport=viewport
+        )
+        
+        s1_imgs = S1Collection64(
+            viewport=viewport
+        )
+        
+        dem = ee.Image("<DEM>")
+        
+        super().__init__(dc_imgs, s1_imgs, dem)
 
