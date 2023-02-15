@@ -40,7 +40,7 @@ class LandCovers:
     def colours(self) -> dict[str, str]:
         c = {str(obj.name): str(obj.value) for obj in LandColours
                 if str(obj.name) in self.labels}
-        c = dict(sorted(c.items(), key=lambda item: item[1]))
+        c = dict(sorted(c.items(), key=lambda item: item[0]))
         return c 
 
     @property
