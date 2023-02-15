@@ -6,6 +6,7 @@ import ee
 
 from eelib import eefuncs
 
+
 @dataclass
 class TrainingData:
     collection: ee.FeatureCollection
@@ -30,22 +31,26 @@ class TrainingData:
         return {lbl: value for value, lbl in enumerate(labels, start=1)}
 
 
-def generate_samples(stack: ee.Image, training_data: TrainingData, props: list[str] = None, 
-                     scale: int = 10, projection = None, tile_scale: int = 16, geom: bool = False) -> TrainingData:
+def generate_samples(stack: ee.Image, training_data: TrainingData, scale: int = 10,
+                     projection = None, tile_scale: int = 16, geom: bool = False) -> TrainingData:
     
     ee_lookup = ee.Dictionary(training_data.labels)
     
     def insert_value(element: ee.Feature):
         return element.set(training_data.value, ee_lookup.get(element.get(training_data.label)))
     
+    def add_geometry(element: ee.Feature):
+        x,y = element.get('POINT_X'), element.get('POINT_Y')
+        return ee.Feature(ee.Geometry.Point([x, y])).copyProperties(element)
+    
     samples = stack.sampleRegions(
         collection = training_data.collection,
-        properties = props,
+        properties = [training_data.value, training_data.label, 'POINT_X', 'POINT_Y'],
         scale = scale,
         projection = projection,
         tileScale = tile_scale,
         geometries = geom
-    ).map(insert_value)
+    ).map(insert_value).map(add_geometry)
     
     training_data.samples = samples
     
