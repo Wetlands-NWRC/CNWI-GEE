@@ -30,8 +30,8 @@ class LandCovers:
     def __init__(self, labels: list[str]) -> None:
         self.labels = labels
 
-        keys = [str(_.name).lower() for _ in LandValues]
-        self.labels = [_.lower() for _ in self.labels]
+        keys = [str(_.name).upper() for _ in LandValues]
+        self.labels = [_.upper() for _ in self.labels]
         
         if any([key in self.labels for key in keys]) == False:
             raise Exception("Label is not in LandValues")
@@ -40,7 +40,8 @@ class LandCovers:
     def colours(self) -> dict[str, str]:
         c = {str(obj.name): str(obj.value) for obj in LandColours
                 if str(obj.name) in self.labels}
-        return dict(sorted(c.items(), key=lambda item: item[1])) 
+        c = dict(sorted(c.items(), key=lambda item: item[1]))
+        return c 
 
     @property
     def palette(self) -> list[str]:
