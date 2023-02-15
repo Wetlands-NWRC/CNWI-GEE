@@ -85,7 +85,7 @@ class DataCubeCollection:
         return instance.select(src, dest)
     
 
-class DataCubeStack(stack._Stack):
+class DataCubeStack(_Stack):
     def __new__(cls, datacubecollection, s1: ee.ImageCollection, dem: ee.Image) -> ee.Image:
         # apply filtering
         # create derivaitves
