@@ -30,7 +30,7 @@ class LandCovers:
     def __init__(self, labels: list[str]) -> None:
         self.labels = labels
 
-        keys = [str(_).lower() for _ in LandValues()]
+        keys = [str(_.name).lower() for _ in LandValues]
         self.labels = [_.lower() for _ in self.labels]
         
         if any([key in self.labels for key in keys]) == False:
