@@ -55,14 +55,15 @@ class CMAP(pd.DataFrame):
         
     def __init__(self, land_cover: LandCovers) -> None:
         
-        value, r, g, b = [], [], [], []
+        labels, value, r, g, b = [], [], [], [], []
         
-        for idx, hex in enumerate(land_cover.colours.values(), start=1):
+        for idx, item in enumerate(land_cover.colours.items(), start=1):
+            label, hex = item
             rgb: tuple[int] = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
-            r.append(rgb[0]); g.append(rgb[1]); b.append(rgb[2]); value.append(idx)
+            r.append(rgb[0]); g.append(rgb[1]); b.append(rgb[2]); value.append(idx), labels.append(label)
         
         data={"value": value, "red": r, "green": g, "blue": b}
-        super().__init__(pd.DataFrame(data=data))
+        super().__init__(pd.DataFrame(data=data, index=labels))
     
     def to_clr(self, filename: str):
         self.to_csv(
