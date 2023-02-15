@@ -4,8 +4,6 @@ from abc import ABC
 
 import ee
 
-from eelib import stack
-
 import cfg
 import bands as dc_bands
 
@@ -87,6 +85,7 @@ class DataCubeCollection:
     
 
 class DataCubeStack(_Stack):
+    # TODO make sar and dem optional 
     def __new__(cls, optical: DataCubeCollection, s1: ee.ImageCollection, dem: ee.Image) -> ee.Image:
         # apply filtering
         # create derivaitves
@@ -112,11 +111,10 @@ class DataCubeStack(_Stack):
         return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope)
 
 
-class Williston_Data_Cube_Stack(DataCubeStack):
-    def __init__(self, viewport: ee.Geometry) -> None:
-        
+class Williston_Data_Cube_Stack:
+    def __new__(cls, viewport: ee.Geometry) -> DataCubeStack:
         dc_imgs = DataCubeCollection(
-            asset_id=None,
+            asset_id="projects/fpca-336015/assets/williston-cba",
             viewport=viewport
         )
         
@@ -124,7 +122,6 @@ class Williston_Data_Cube_Stack(DataCubeStack):
             viewport=viewport
         )
         
-        dem = ee.Image("<DEM>")
+        dem = ee.Image("NASA/NASADEM_HGT/001")
         
-        super().__init__(dc_imgs, s1_imgs, dem)
-
+        return DataCubeStack(optical=dc_imgs, s1=s1_imgs, dem=dem)
