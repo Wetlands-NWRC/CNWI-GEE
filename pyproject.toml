@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cnwi_gee"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Ryan Hamilton", email="ryangilberthamilton@gmail.com" },
 ]
