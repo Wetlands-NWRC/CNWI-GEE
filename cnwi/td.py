@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 import ee
 
-from eelib import eefuncs
+from .eelib import eefuncs
 
 
 @dataclass

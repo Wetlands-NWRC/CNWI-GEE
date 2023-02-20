@@ -2,7 +2,7 @@ from typing import Dict, List, Union
 
 import ee
 
-from eelib import deriv, sf, td
+from . import deriv, sf, td
 
 
 def co_register(this_image: ee.Image, ref_image: ee.Image, max_offset: float,

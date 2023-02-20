@@ -6,7 +6,7 @@ import ee
 from . import cfg
 from . import td
 
-from eelib import classifiers as rf
+from .eelib import classifiers as rf
 
 @dataclass
 class RandomForestCFG:
