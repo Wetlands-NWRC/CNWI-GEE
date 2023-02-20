@@ -3,9 +3,8 @@ from dataclasses import dataclass, field
 
 import ee
 
-import cfg
-import inputs
-import td
+from . import cfg
+from . import td
 
 from eelib import classifiers as rf
 

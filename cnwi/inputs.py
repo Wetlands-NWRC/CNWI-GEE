@@ -4,8 +4,8 @@ from abc import ABC
 
 import ee
 
-import cfg
-import bands as dc_bands
+from . import cfg
+from . import bands as dc_bands
 
 from eelib import bands as ee_bands
 from eelib import eefuncs, sf
