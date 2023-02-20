@@ -7,8 +7,8 @@ import ee
 from . import cfg
 from . import bands as dc_bands
 
-from eelib import bands as ee_bands
-from eelib import eefuncs, sf
+from .eelib import bands as ee_bands
+from .eelib import eefuncs, sf
 
 
 def parse_season(collection: DataCubeCollection) -> list[ee.Image]:
