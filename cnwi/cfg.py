@@ -5,8 +5,8 @@ from datetime import datetime
 
 import ee
 
-import td
-import bands as dc_bands
+from . import td
+from . import bands as dc_bands
 
 
 @dataclass

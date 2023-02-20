@@ -1,5 +1,5 @@
 import ee
-import td
+from . import td
 
 
 def datacubelogging(image_collection: ee.ImageCollection) -> ee.FeatureCollection:
