@@ -112,7 +112,7 @@ class DataCubeStack(_Stack):
         return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Williston_Data_Cube_Stack:
     viewport : ee.Geometry = None
     
@@ -127,4 +127,4 @@ class Williston_Data_Cube_Stack:
         )
     
     def stack(self) -> DataCubeStack:
-        return DataCubeStack(optical=self.dc_imgs, s1=self.s1_imgs, dem=self.dem) 
+        return DataCubeStack(optical=self.datacube, s1=self.s1_imgs, dem=self.dem) 
