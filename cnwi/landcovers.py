@@ -73,7 +73,9 @@ class CMAP(pd.DataFrame):
             index=False
         )
         
-                
+
+class AAFC(enum.Enum):
+    pass
         
         
         

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from dataclasses import dataclass
 
 import ee
 
@@ -111,17 +112,19 @@ class DataCubeStack(_Stack):
         return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope)
 
 
+@dataclass
 class Williston_Data_Cube_Stack:
-    def __new__(cls, viewport: ee.Geometry) -> DataCubeStack:
-        dc_imgs = DataCubeCollection(
+    viewport : ee.Geometry = None
+    
+    def __post_init__(self):
+        self.datacube =  DataCubeCollection(
             asset_id="projects/fpca-336015/assets/williston-cba",
-            viewport=viewport
+            viewport=self.viewport
         )
         
-        s1_imgs = S1Collection64(
-            viewport=viewport
+        self.s1_imgs =  S1Collection64(
+            viewport=self.viewport
         )
-        
-        dem = ee.Image("NASA/NASADEM_HGT/001")
-        
-        return DataCubeStack(optical=dc_imgs, s1=s1_imgs, dem=dem)
+    
+    def stack(self) -> DataCubeStack:
+        return DataCubeStack(optical=self.dc_imgs, s1=self.s1_imgs, dem=self.dem) 
