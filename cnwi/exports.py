@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 from abc import ABC
@@ -5,6 +7,14 @@ from dataclasses import dataclass, field
 from typing import Union
 
 import ee
+
+@dataclass()
+class eeTaskQue:
+    que: list[CloudTasks] = field(default_factory=list)
+
+    def start_tasks(self):
+        [_.task.start() for _ in self.que]
+
 
 @dataclass
 class CloudTasks(ABC):
@@ -16,6 +26,7 @@ class CloudTasks(ABC):
     
     def __post_init__(self):
         self.task: ee.batch.Task = None
+
 
 
 @dataclass

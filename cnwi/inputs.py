@@ -71,7 +71,21 @@ class S1Collection64:
             instance = instance.filterBounds(viewport)
 
         return instance.map(lambda x: x.set('date', x.date().format('YYYY-MM-dd')))
-        
+
+
+class _DEM(ABC):
+    pass
+
+
+class CDEM(_DEM):
+    def __new__(cls, viewport: ee.Geometry = None) -> ee.Image:
+        instance = ee.ImageCollection("NRCan/CDEM")
+
+        if viewport is not None:
+            return instance.filterBounds(viewport).mean()
+        else:
+            return instance.mean()
+
 
 class DataCubeCollection:
     def __new__(cls, asset_id: str, viewport: ee.Geometry = None) -> ee.ImageCollection:
@@ -87,7 +101,7 @@ class DataCubeCollection:
 
 class DataCubeStack(_Stack):
     # TODO make sar and dem optional 
-    def __new__(cls, optical: DataCubeCollection, s1: ee.ImageCollection, dem: ee.Image) -> ee.Image:
+    def __new__(cls, optical: DataCubeCollection, s1: ee.ImageCollection, dem: _DEM) -> ee.Image:
         # apply filtering
         # create derivaitves
         
@@ -112,19 +126,18 @@ class DataCubeStack(_Stack):
         return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope)
 
 
-@dataclass
 class Williston_Data_Cube_Stack:
-    viewport : ee.Geometry = None
-    
-    def __post_init__(self):
-        self.datacube =  DataCubeCollection(
+    def __init__(self, viewport: ee.Geometry = None):
+        self.datacube = DataCubeCollection(
             asset_id="projects/fpca-336015/assets/williston-cba",
-            viewport=self.viewport
+            viewport=viewport
         )
-        
-        self.s1_imgs =  S1Collection64(
-            viewport=self.viewport
+
+        self.s1_imgs = S1Collection64(
+            viewport=viewport
         )
-    
+
+        self.dem = CDEM()
+
     def stack(self) -> DataCubeStack:
-        return DataCubeStack(optical=self.dc_imgs, s1=self.s1_imgs, dem=self.dem) 
+        return DataCubeStack(optical=self.datacube, s1=self.s1_imgs, dem=self.dem) 
