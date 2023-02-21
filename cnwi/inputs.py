@@ -87,6 +87,7 @@ class DataCubeCollection:
 
 class DataCubeStack(_Stack):
     # TODO make sar and dem optional 
+    # TODO make more generic
     def __new__(cls, optical: DataCubeCollection, s1: ee.ImageCollection, dem: ee.Image) -> ee.Image:
         # apply filtering
         # create derivaitves
@@ -127,4 +128,15 @@ class Williston_Data_Cube_Stack:
         )
     
     def stack(self) -> DataCubeStack:
-        return DataCubeStack(optical=self.datacube, s1=self.s1_imgs, dem=self.dem) 
+        return DataCubeStack(optical=self.datacube, s1=self.s1_imgs, dem=self.dem)
+    
+
+class AAFC:
+    
+    def __new__(cls, target_year: int = 2018, viewport: ee.Geometry = None) -> ee.Image:
+        instance = ee.ImageCollection("AAFC/ACI").filterDate(target_year, (target_year + 1))
+        if viewport is None:
+            return instance.filterBounds(viewport).first()
+        else:
+            return instance.first()
+    
