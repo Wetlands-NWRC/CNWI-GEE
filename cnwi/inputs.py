@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
+from typing import Union, Iterable
 
 import ee
 
@@ -44,10 +45,6 @@ def parse_s1_imgs(collection: S1Collection64):
     return imgs
 
 
-class _Stack(ABC):
-    pass
-
-
 class S1Collection64:
     
     def __new__(cls, viewport: ee.Geometry = None) -> ee.ImageCollection:
@@ -85,21 +82,25 @@ class DataCubeCollection:
         return instance.select(src, dest)
     
 
-class DataCubeStack(_Stack):
+class ImageStack:
     # TODO make sar and dem optional 
     # TODO make more generic
-    def __new__(cls, optical: DataCubeCollection, s1: ee.ImageCollection, dem: ee.Image) -> ee.Image:
+    def __new__(cls, optical: Union[list[str], ee.ImageCollection], 
+                s1: Union[list[str], ee.ImageCollection] , dem: ee.Image, *products: Iterable[ee.Image]) -> ee.Image:
         # apply filtering
         # create derivaitves
         
-        opticals: list[ee.Image] = parse_season(optical.mean())
+        if isinstance(optical, DataCubeCollection):
+            opticals: list[ee.Image] = parse_season(optical.mean())
+        
         ndvis = eefuncs.batch_create_ndvi(opticals)
         savis = eefuncs.batch_create_savi(opticals)
         tassels = eefuncs.batch_create_tassel_cap(opticals)
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-         
-        sars: list[ee.Image] = parse_s1_imgs(s1)
+        if isinstance(sars, ee.ImageCollection): 
+            sars: list[ee.Image] = parse_s1_imgs(s1)
+        
         pp_1 = eefuncs.batch_despeckle(sars, sf.Boxcar(1))
         ratios = eefuncs.batch_create_ratio(pp_1, 'VV', 'VH')
         
@@ -110,7 +111,16 @@ class DataCubeStack(_Stack):
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         
-        return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope)
+        return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope, 
+                            *products)
+    
+    def __init__(self, optical, s1, dem, *products) -> None:
+        self.optical = optical
+        self.s1 = s1
+        self.dem = dem
+        self.products = products
+
+
 
 
 @dataclass(frozen=True)
