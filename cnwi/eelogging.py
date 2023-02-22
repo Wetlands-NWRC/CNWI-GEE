@@ -16,8 +16,10 @@ def sentinel1logging(image_collection: ee.ImageCollection) -> ee.FeatureCollecti
     features: list[dict] = []
     for obj in response:
         geom = obj.get('system:footprint', None)
+        date = ee.Date(obj.get('system:start_time')).format('YYYY-MM-dd')
         props = {
-            "system_index": obj.get('id') 
+            "system_index": obj.get('id'),
+            'date': date
         }
         features.append(ee.Feature(geom=geom, opt_properties=props))
 
