@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass,field
+from dataclasses import dataclass,field, InitVar
 from typing import Union, Iterable
 
 import ee
 
 from . import cfg
 from . import bands as dc_bands
+
+from .datasets import dem
+from .datasets import williston
 
 from .eelib import bands as ee_bands
 from .eelib import eefuncs, sf
@@ -45,45 +48,6 @@ def parse_s1_imgs(collection: S1Collection64):
     return imgs
 
 
-class S1Collection64:
-    
-    def __new__(cls, viewport: ee.Geometry = None) -> ee.ImageCollection:
-        asset_ids = [
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015452_20180609T015517_011290_014BA0_39FD",
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015517_20180609T015542_011290_014BA0_2658",
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015542_20180609T015616_011290_014BA0_EE30",
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015454_20180715T015519_011815_015BE0_0362",
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015519_20180715T015544_011815_015BE0_D8D7",
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180715T015544_20180715T015618_011815_015BE0_8287",
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015503_20180913T015528_012690_0176B4_78B3",
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015528_20180913T015553_012690_0176B4_0EB4",
-            "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015553_20180913T015613_012690_0176B4_EB44"
-        ]
-        
-        imgs = [ee.Image(_) for _ in asset_ids]
-        
-        instance = ee.ImageCollection(imgs)
-        
-        if viewport is not None:
-            instance = instance.filterBounds(viewport)
-
-        return instance.map(lambda x: x.set('date', x.date().format('YYYY-MM-dd')))
-
-
-class _DEM(ABC):
-    pass
-
-
-class CDEM(_DEM):
-    def __new__(cls, viewport: ee.Geometry = None) -> ee.Image:
-        instance = ee.ImageCollection("NRCan/CDEM")
-
-        if viewport is not None:
-            return instance.filterBounds(viewport).mean()
-        else:
-            return instance.mean()
-
-
 class DataCubeCollection:
     def __new__(cls, asset_id: str, viewport: ee.Geometry = None) -> _DataCubeCollection:
         instance = _DataCubeCollection(asset_id)
@@ -99,16 +63,6 @@ class DataCubeCollection:
 class _DataCubeCollection(ee.ImageCollection):
     def __init__(self, args):
         super().__init__(args)
-
-
-class CDEM:
-    def __new__(cls, viewport: ee.Geometry = None) -> ee.Image:
-        instance = ee.ImageCollection("NRCan/CDEM")
-
-        if viewport is not None:
-            return instance.filterBounds(viewport).mean()
-        else:
-            return instance.mean()
 
 
 class ImageStack:
@@ -144,8 +98,8 @@ class ImageStack:
     
 
 @dataclass(frozen=False)
-class WillistonStack64:
-    """Williston Datacube Stack Dataclass
+class DCWillistonStack64:
+    """Williston Datacube Stack Dataclass it is a Pre - Built Dataset for the entires Basin
     
     Products
     --------
@@ -153,32 +107,54 @@ class WillistonStack64:
     - Sentinel - 1 from Orbit Number 64
     - Sentinel - 2 from Data cube
     - DEM - CDEM
-    """    
-    viewport: ee.Geometry = field(default=None)
+    """
     
-    def __post_init__(self):
+    viewport: ee.Geometry = InitVar[field(default=None)]
+    
+    def __post_init__(self, viewport):
+        
+        cfg = williston.WillistonDC()
+        
         optical = DataCubeCollection(
-            asset_id="projects/fpca-336015/assets/williston-cba",
+            asset_id=cfg.assetid,
             viewport=viewport
         )
         
-        s1 =  S1Collection64(
-            viewport=self.viewport
+        s1 =  williston.S1Collection64(
+            viewport=viewport
         )
         
-        dem = CDEM(
-            viewport=self.viewport
+        dem = dem.CDEM(
+            viewport=viewport
         )
         
         self.stack = ImageStack(optical=optical, s1=s1, dem=dem)
 
 
-class AAFC:
+@dataclass
+class BM_A_WillistonStack:
+    """Williston Region A, Bench Mark, contains only gee native datasets
     
-    def __new__(cls, target_year: int = 2018, viewport: ee.Geometry = None) -> ee.Image:
-        instance = ee.ImageCollection("AAFC/ACI").filterDate(target_year, (target_year + 1))
-        if viewport is None:
-            return instance.filterBounds(viewport).first()
-        else:
-            return instance.first()
+    NOTE:
+    -----
+    
+    All products are pre - build list of images
+    
+    """    
+    
+    products: InitVar[Iterable[ee.Image]] = None
+    
+    def __post_init__(self, products):
+        
+        optical = williston.Williston_A_S2_IL()
+        
+        s1 = williston.Williston_A_S1_IL()
+        
+        dem = dem.CDEM(
+            viewport=self.viewport
+        )
+        
+        self.stack = ImageStack(optical=optical, s1=s1, dem=dem, *products)
+
+
     
