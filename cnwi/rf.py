@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 
 import ee
 
-from . import cfg
 from . import td
 
 from .eelib import classifiers as rf
@@ -33,7 +32,6 @@ class RandomForestCFG:
             self.predictors = self.stack.bandNames()
         
 
-
 @dataclass(frozen=True)
 class RFOutput:
     model: "ee.Classifier"
@@ -41,7 +39,7 @@ class RFOutput:
     samples: ee.FeatureCollection
 
 
-def cnwi_random_forest(config: cfg.RandomForestCFG) -> RFOutput:
+def cnwi_random_forest(config: RandomForestCFG) -> RFOutput:
     model = rf.RandomForest(
         n_trees=config.n_trees,
         var_per_split=config.var_per_split,

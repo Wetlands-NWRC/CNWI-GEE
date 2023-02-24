@@ -73,7 +73,7 @@ class DCWillistonStack64:
             viewport=viewport
         )
         
-        self.stack = ImageStack(optical=optical, s1=s1, dem=elevation)
+        self.stack = ImageStack(optical=optical, sars=s1, dem=elevation)
 
 
 @dataclass
