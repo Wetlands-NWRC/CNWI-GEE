@@ -1,17 +1,8 @@
-import os
-import sys
-
-from dataclasses import dataclass
-from typing import Iterable, Union
-
 import ee
 
 from . import struct
 from . import datacube
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-
-from cnwi import inputs
 
 class S1Collection64(struct.ImageList):
     
