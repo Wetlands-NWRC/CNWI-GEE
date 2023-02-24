@@ -1,3 +1,6 @@
+import ee
+
+
 class CDEM:
     def __new__(cls, viewport: ee.Geometry = None) -> ee.Image:
         instance = ee.ImageCollection("NRCan/CDEM")
