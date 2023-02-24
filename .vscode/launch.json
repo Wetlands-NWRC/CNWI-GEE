@@ -5,7 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Module",
+            "name": "Python: Datasets.Williston",
+            "type": "python",
+            "request": "launch",
+            "module": "cnwi.datasets.williston",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: cnwi.inputs",
             "type": "python",
             "request": "launch",
             "module": "cnwi.inputs",
