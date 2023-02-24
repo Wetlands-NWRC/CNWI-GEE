@@ -1,12 +1,20 @@
+import os
+import sys
+
+from dataclasses import dataclass
 from typing import Iterable, Union
 
 import ee
 
 from . import struct
 
-class S1Collection64:
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+
+from cnwi import inputs
+
+class S1Collection64(struct.ImageList):
     
-    def __new__(cls, viewport: ee.Geometry = None) -> ee.ImageCollection:
+    def __init__(self):
         asset_ids = [
             "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015452_20180609T015517_011290_014BA0_39FD",
             "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015517_20180609T015542_011290_014BA0_2658",
@@ -18,24 +26,32 @@ class S1Collection64:
             "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015528_20180913T015553_012690_0176B4_0EB4",
             "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015553_20180913T015613_012690_0176B4_EB44"
         ]
-        
-        imgs = [ee.Image(_) for _ in asset_ids]
-        
-        instance = ee.ImageCollection(imgs)
-        
-        if viewport is not None:
-            instance = instance.filterBounds(viewport)
-
-        return instance.map(lambda x: x.set('date', x.date().format('YYYY-MM-dd')))
-
+        images = [ee.Image(_).set('date', ee.Image(_).date().format('YYYY-MM-dd')) 
+                  for _ in asset_ids]
+        super().__init__(images)
 
 
 class Williston_A_S2_IL(struct.ImageList):
-    def __init__(self, images: Iterable[Union[str, ee.Image]]) -> None:
-        images = []
+    def __init__(self) -> None:
+        """Williston A Senteniel 2 TOA GEE native assets. Only Valid for AOI A
+        """        
+        images = [
+            'COPERNICUS/S2/20180519T191909_20180519T192621_T10UEF',
+            'COPERNICUS/S2/20180728T191909_20180728T192508_T10UEF'
+        ]
         super().__init__(images)
 
 
 class Williston_A_S1_IL(struct.ImageList):
-    def __init__(self, images: Iterable[Union[str, ee.Image]]) -> None:
+    def __init__(self) -> None:
+        images = [
+            'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180517T142651_20180517T142716_010962_014115_CA58',
+            'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180728T142655_20180728T142720_012012_0161D6_96BF'
+        ]
         super().__init__(images)
+
+
+@dataclass(frozen=True)
+class WillistonDC:
+    assetid: str = "projects/fpca-336015/assets/williston-cba"
+    viewport: ee.Geometry = None
