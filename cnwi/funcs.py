@@ -1,3 +1,12 @@
+from datetime import datetime
+
+import ee
+
+from .datasets.datacube import DataCube
+from .datasets.struct import ImageList
+from .eelib import bands
+
+
 def parse_season(collection: DataCube, seasons_dict: dict[str, dict[str, str]]) -> list[ee.Image]:
     # parse the image into spring summer fall
     s2_sr_bands = [str(_.name) for _ in bands.S2SR]
@@ -26,9 +35,7 @@ def data_cube_seasons(target_year: int = 2018) -> dict[str, dict[str, str]]:
 
         return tuple(map(to_dt, doys))
 
-
     doys = 135, 181, 182, 243, 244, 300
-    band_prefix = {'spring': 'a_spri_b.*', 'summer': 'b_summ_b.*', 'fall': 'c_fall_b.*'}
     dates = to_datetime(doys)
     
     seasons = {
@@ -37,3 +44,16 @@ def data_cube_seasons(target_year: int = 2018) -> dict[str, dict[str, str]]:
         'fall': {'band_prefix': 'c_fall_b.*', 'start': dates[4], 'end': dates[5]}
     }
     return seasons
+
+
+def parse_s1_imgs(collection: ee.ImageCollection):
+    dates: list[str] = collection.aggregate_array('date').getInfo()
+   
+    if len(dates) > 3:
+        imgs = [collection.filter(f'date == "{date}"').mean().set('date', date)
+               for date in sorted(set(dates))]
+    else:
+        imgs = [ee.Image(_.get('id')).set('date', dates[idx]) for idx, _ 
+                in enumerate(collection.toList(collection.size()).getInfo())]
+
+    return ImageList(imgs)
