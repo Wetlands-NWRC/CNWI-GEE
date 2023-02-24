@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import os
+import sys
+
 from abc import ABC
 from datetime import datetime
 from enum import Enum
 
 import ee
 
+sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), ".."))
+
+from eelib import bands
 
 class DataCubeBands(Enum):
     """Original Data Cube Band Mappings"""
@@ -65,30 +71,6 @@ class DataCubeBands(Enum):
     B53 = 'c_fall_weight_y2_swiradj'
 
 
-def data_cube_seasons(target_year: int = 2018) -> dict[str, dict[str, str]]:
-    def to_datetime(doys: tuple[str]):
-        doys = sorted(doys)
-        # julain days parse to YYYY MM dd
-
-        def to_dt(doy: int) -> str:
-            doy = datetime.strptime(f'{target_year}{doy}', '%Y%j')
-            return doy.strftime("%Y-%m-%d")
-
-        return tuple(map(to_dt, doys))
-
-
-    doys = 135, 181, 182, 243, 244, 300
-    band_prefix = {'spring': 'a_spri_b.*', 'summer': 'b_summ_b.*', 'fall': 'c_fall_b.*'}
-    dates = to_datetime(doys)
-    
-    seasons = {
-        'spring': {'band_prefix': 'a_spri_b.*', 'start': dates[0], 'end': dates[1]},
-        'summer': {'band_prefix': 'b_summ_b.*', 'start': dates[2], 'end': dates[3]},
-        'fall': {'band_prefix': 'c_fall_b.*', 'start': dates[4], 'end': dates[5]}
-    }
-    return seasons
-
-
 class GC_ImageCollection:
     
     def __new__(cls, asset_id) -> ee.ImageCollection:
@@ -96,7 +78,7 @@ class GC_ImageCollection:
 
 
 class DataCube(GC_ImageCollection):
-    def __new__(cls, asset_id) -> ee.ImageCollection:
+    def __new__(cls, asset_id) -> list[ee.Image]:
         instance = ee.ImageCollection(asset_id).select(
             selectors=[str(_.name) for _ in DataCubeBands],
             opt_names=[str(_.value) for _ in DataCubeBands]
