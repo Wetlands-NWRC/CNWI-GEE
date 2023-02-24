@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass,field
 from typing import Union, Iterable
 
 import ee
@@ -71,8 +71,8 @@ class S1Collection64:
         
 
 class DataCubeCollection:
-    def __new__(cls, asset_id: str, viewport: ee.Geometry = None) -> ee.ImageCollection:
-        instance = ee.ImageCollection(asset_id)
+    def __new__(cls, asset_id: str, viewport: ee.Geometry = None) -> _DataCubeCollection:
+        instance = _DataCubeCollection(asset_id)
         
         if viewport is not None:
             instance = instance.filterBounds(viewport)
@@ -80,17 +80,31 @@ class DataCubeCollection:
         src = [ _.name for _ in dc_bands.DataCubeBands]
         dest = [_.value for _ in dc_bands.DataCubeBands]
         return instance.select(src, dest)
-    
+
+
+class _DataCubeCollection(ee.ImageCollection):
+    def __init__(self, args):
+        super().__init__(args)
+
+
+class CDEM:
+    def __new__(cls, viewport: ee.Geometry = None) -> ee.Image:
+        instance = ee.ImageCollection("NRCan/CDEM")
+
+        if viewport is not None:
+            return instance.filterBounds(viewport).mean()
+        else:
+            return instance.mean()
+
 
 class ImageStack:
     # TODO make sar and dem optional 
     # TODO make more generic
-    def __new__(cls, optical: Union[list[str], ee.ImageCollection], 
+    def __new__(cls, optical: Union[list[str], _DataCubeCollection], 
                 s1: Union[list[str], ee.ImageCollection] , dem: ee.Image, *products: Iterable[ee.Image]) -> ee.Image:
         # apply filtering
         # create derivaitves
-        
-        if isinstance(optical, DataCubeCollection):
+        if isinstance(optical, _DataCubeCollection):
             opticals: list[ee.Image] = parse_season(optical.mean())
         
         ndvis = eefuncs.batch_create_ndvi(opticals)
@@ -98,7 +112,7 @@ class ImageStack:
         tassels = eefuncs.batch_create_tassel_cap(opticals)
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        if isinstance(sars, ee.ImageCollection): 
+        if isinstance(s1, ee.ImageCollection): 
             sars: list[ee.Image] = parse_s1_imgs(s1)
         
         pp_1 = eefuncs.batch_despeckle(sars, sf.Boxcar(1))
@@ -108,38 +122,42 @@ class ImageStack:
         
         elevation = dem.select('elevation')
         slope = ee.Terrain.slope(elevation)
-        
+        aspect = ee.Terrain.aspect(elevation)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         
         return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope, 
-                            *products)
+                            aspect, *products)
     
-    def __init__(self, optical, s1, dem, *products) -> None:
-        self.optical = optical
-        self.s1 = s1
-        self.dem = dem
-        self.products = products
 
-
-
-
-@dataclass(frozen=True)
-class Williston_Data_Cube_Stack:
-    viewport : ee.Geometry = None
+@dataclass(frozen=False)
+class WillistonStack64:
+    """Williston Datacube Stack Dataclass
+    
+    Products
+    --------
+    
+    - Sentinel - 1 from Orbit Number 64
+    - Sentinel - 2 from Data cube
+    - DEM - CDEM
+    """    
+    viewport: ee.Geometry = field(default=None)
     
     def __post_init__(self):
-        self.datacube =  DataCubeCollection(
+        optical = DataCubeCollection(
             asset_id="projects/fpca-336015/assets/williston-cba",
             viewport=self.viewport
         )
         
-        self.s1_imgs =  S1Collection64(
+        s1 =  S1Collection64(
             viewport=self.viewport
         )
-    
-    def stack(self) -> DataCubeStack:
-        return DataCubeStack(optical=self.datacube, s1=self.s1_imgs, dem=self.dem)
-    
+        
+        dem = CDEM(
+            viewport=self.viewport
+        )
+        
+        self.stack = ImageStack(optical=optical, s1=s1, dem=dem)
+
 
 class AAFC:
     
