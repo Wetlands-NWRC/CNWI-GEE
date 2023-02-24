@@ -7,6 +7,7 @@ from typing import Iterable, Union
 import ee
 
 from . import struct
+from . import datacube
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 
@@ -51,7 +52,7 @@ class Williston_A_S1_IL(struct.ImageList):
         super().__init__(images)
 
 
-@dataclass(frozen=True)
-class WillistonDC:
-    assetid: str = "projects/fpca-336015/assets/williston-cba"
-    viewport: ee.Geometry = None
+class WillistonDataCube(datacube.DataCube):
+    def __new__(cls) -> ee.ImageCollection:
+        asset_id = ""
+        return super().__new__(asset_id)
