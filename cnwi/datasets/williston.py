@@ -2,6 +2,8 @@ from typing import Iterable, Union
 
 import ee
 
+from . import struct
+
 class S1Collection64:
     
     def __new__(cls, viewport: ee.Geometry = None) -> ee.ImageCollection:
@@ -27,26 +29,13 @@ class S1Collection64:
         return instance.map(lambda x: x.set('date', x.date().format('YYYY-MM-dd')))
 
 
-class ImageList:
-    def __init__(self, images: Iterable[Union[str, ee.Image]]) -> None:
-        if not isinstance(images, list):
-            self.imgs = list(images)
-        else:
-            self.imgs = images
-    
-    def __len__(self):
-        return len(self.imgs)
-    
-    def __getitem__(self, value):
-        return self.imgs[value]
 
-
-class Williston_A_S2_IL(ImageList):
+class Williston_A_S2_IL(struct.ImageList):
     def __init__(self, images: Iterable[Union[str, ee.Image]]) -> None:
         images = []
         super().__init__(images)
 
 
-class Williston_A_S1_IL(ImageList):
+class Williston_A_S1_IL(struct.ImageList):
     def __init__(self, images: Iterable[Union[str, ee.Image]]) -> None:
         super().__init__(images)
