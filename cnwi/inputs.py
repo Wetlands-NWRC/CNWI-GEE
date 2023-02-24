@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass,field
+from typing import Union, Iterable
 
 import ee
 
@@ -44,10 +45,6 @@ def parse_s1_imgs(collection: S1Collection64):
     return imgs
 
 
-class _Stack(ABC):
-    pass
-
-
 class S1Collection64:
     
     def __new__(cls, viewport: ee.Geometry = None) -> ee.ImageCollection:
@@ -88,8 +85,8 @@ class CDEM(_DEM):
 
 
 class DataCubeCollection:
-    def __new__(cls, asset_id: str, viewport: ee.Geometry = None) -> ee.ImageCollection:
-        instance = ee.ImageCollection(asset_id)
+    def __new__(cls, asset_id: str, viewport: ee.Geometry = None) -> _DataCubeCollection:
+        instance = _DataCubeCollection(asset_id)
         
         if viewport is not None:
             instance = instance.filterBounds(viewport)
@@ -97,22 +94,41 @@ class DataCubeCollection:
         src = [ _.name for _ in dc_bands.DataCubeBands]
         dest = [_.value for _ in dc_bands.DataCubeBands]
         return instance.select(src, dest)
-    
 
-class DataCubeStack(_Stack):
+
+class _DataCubeCollection(ee.ImageCollection):
+    def __init__(self, args):
+        super().__init__(args)
+
+
+class CDEM:
+    def __new__(cls, viewport: ee.Geometry = None) -> ee.Image:
+        instance = ee.ImageCollection("NRCan/CDEM")
+
+        if viewport is not None:
+            return instance.filterBounds(viewport).mean()
+        else:
+            return instance.mean()
+
+
+class ImageStack:
     # TODO make sar and dem optional 
-    def __new__(cls, optical: DataCubeCollection, s1: ee.ImageCollection, dem: _DEM) -> ee.Image:
+    # TODO make more generic
+    def __new__(cls, optical: Union[list[str], _DataCubeCollection], 
+                s1: Union[list[str], ee.ImageCollection] , dem: ee.Image, *products: Iterable[ee.Image]) -> ee.Image:
         # apply filtering
         # create derivaitves
+        if isinstance(optical, _DataCubeCollection):
+            opticals: list[ee.Image] = parse_season(optical.mean())
         
-        opticals: list[ee.Image] = parse_season(optical.mean())
         ndvis = eefuncs.batch_create_ndvi(opticals)
         savis = eefuncs.batch_create_savi(opticals)
         tassels = eefuncs.batch_create_tassel_cap(opticals)
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-         
-        sars: list[ee.Image] = parse_s1_imgs(s1)
+        if isinstance(s1, ee.ImageCollection): 
+            sars: list[ee.Image] = parse_s1_imgs(s1)
+        
         pp_1 = eefuncs.batch_despeckle(sars, sf.Boxcar(1))
         ratios = eefuncs.batch_create_ratio(pp_1, 'VV', 'VH')
         
@@ -120,29 +136,42 @@ class DataCubeStack(_Stack):
         
         elevation = dem.select('elevation')
         slope = ee.Terrain.slope(elevation)
-        
+        aspect = ee.Terrain.aspect(elevation)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         
-        return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope)
+        return ee.Image.cat(*opticals, *ndvis, *savis, *tassels, *pp_1, *ratios, elevation, slope, 
+                            aspect, *products)
+    
 
-
-class Williston_Data_Cube_Stack:
-    def __init__(self, viewport: ee.Geometry = None):
-        self.datacube = DataCubeCollection(
+@dataclass(frozen=False)
+class WillistonStack64:
+    """Williston Datacube Stack Dataclass
+    
+    Products
+    --------
+    
+    - Sentinel - 1 from Orbit Number 64
+    - Sentinel - 2 from Data cube
+    - DEM - CDEM
+    """    
+    viewport: ee.Geometry = field(default=None)
+    
+    def __post_init__(self):
+        optical = DataCubeCollection(
             asset_id="projects/fpca-336015/assets/williston-cba",
             viewport=viewport
         )
-
-        self.s1_imgs = S1Collection64(
-            viewport=viewport
+        
+        s1 =  S1Collection64(
+            viewport=self.viewport
         )
+        
+        dem = CDEM(
+            viewport=self.viewport
+        )
+        
+        self.stack = ImageStack(optical=optical, s1=s1, dem=dem)
 
-        self.dem = CDEM()
-
-    def stack(self) -> DataCubeStack:
-        return DataCubeStack(optical=self.datacube, s1=self.s1_imgs, dem=self.dem)
-
-    
 
 class AAFC:
     
