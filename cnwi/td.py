@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import geopandas as gpd
 import ee
 
 from .eelib import eefuncs
@@ -55,3 +56,15 @@ def generate_samples(stack: ee.Image, training_data: TrainingData, scale: int = 
     training_data.samples = samples
     
     return training_data
+
+
+def label_frequency(gdf:gpd.GeoDataFrame, label: str) -> int:
+    summary = gdf.groupby(label)[label].count()
+    if len(set(summary)) > 1:
+        return summary.min()
+    else:
+        return None
+
+
+def balance_dataset(gdf, n: int, label: str, random_state = 1) -> gpd.GeoDataFrame:
+    return gdf.groupby(label).sample(n=n, random_state=random_state)

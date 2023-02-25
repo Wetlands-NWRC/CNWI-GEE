@@ -1,5 +1,17 @@
+from __future__ import annotations
+
+import os
+import sys
+
+from abc import ABC
+from datetime import datetime
 from enum import Enum
 
+import ee
+
+sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), ".."))
+
+from eelib import bands
 
 class DataCubeBands(Enum):
     """Original Data Cube Band Mappings"""
@@ -57,3 +69,18 @@ class DataCubeBands(Enum):
     B51 = 'c_fall_weight_y2'
     B52 = 'c_fall_weight_y2_base'
     B53 = 'c_fall_weight_y2_swiradj'
+
+
+class GC_ImageCollection:
+    
+    def __new__(cls, asset_id) -> ee.ImageCollection:
+        return ee.ImageCollection(asset_id)
+
+
+class DataCube(GC_ImageCollection):
+    def __new__(cls, asset_id) -> list[ee.Image]:
+        instance = ee.ImageCollection(asset_id).select(
+            selectors=[str(_.name) for _ in DataCubeBands],
+            opt_names=[str(_.value) for _ in DataCubeBands]
+        )
+        return instance
