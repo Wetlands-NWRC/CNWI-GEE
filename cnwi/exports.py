@@ -23,9 +23,11 @@ class CloudTasks(ABC):
     bucket: str = field(default=os.environ.get('BUCKET', None))
     filename_prefix: str = field(default=None)
     file_format: str = field(default=None)
+    que: eeTaskQue = field(default_factory=eeTaskQue)
     
     def __post_init__(self):
         self.task: ee.batch.Task = None
+        self.que.que.append(self.task)
 
 
 

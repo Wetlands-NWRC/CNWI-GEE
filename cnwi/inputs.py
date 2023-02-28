@@ -95,11 +95,9 @@ class BM_A_WillistonStack:
         
         s1 = williston.Williston_A_S1_IL()
         
-        dem = dem.CDEM(
+        elevation = dem.CDEM(
             viewport=self.viewport
         )
         
-        self.stack = ImageStack(optical=optical, s1=s1, dem=dem, *products)
+        self.stack = ImageStack(optical=optical, s1=s1, dem=elevation, *products)
 
-
-    
