@@ -7,5 +7,5 @@ class CDEM(ee.ImageCollection):
     _ASSET_ID = "NRCan/CDEM"
     
     def __init__(self):
-        super().__init__(self.ASSET_ID)
+        super().__init__(self._ASSET_ID)
     
