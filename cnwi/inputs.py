@@ -13,7 +13,7 @@ from .datasets import williston
 
 from .eelib import eefuncs, sf
 
-
+# TODO update class signature to __init__ need to make more of a tool pattern, not creational
 class ImageStack:
     # TODO make sar and dem optional 
     # TODO make more generic
@@ -33,7 +33,8 @@ class ImageStack:
         ratios = eefuncs.batch_create_ratio(pp_1, 'VV', 'VH')
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        
+        if isinstance(elevation, ee.ImageCollection):
+            elevation = elevation.mean()
         elevation = dem.select('elevation')
         slope = ee.Terrain.slope(elevation)
         aspect = ee.Terrain.aspect(elevation)
@@ -69,9 +70,8 @@ class DCWillistonStack64:
         
         s1 = funcs.parse_s1_imgs(williston.WillistonS164())
         
-        elevation = dem.CDEM(
-            viewport=viewport
-        )
+        elevation = dem.CDEM().filterBounds(viewport).map(lambda x: x.resample('bicubic')).\
+            map(sf.perona_malik)
         
         self.stack = ImageStack(optical=optical, sars=s1, dem=elevation)
 
