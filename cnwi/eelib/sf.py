@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Callable
 
 import ee
 
@@ -26,7 +27,7 @@ class Boxcar(SpatialFilter):
         return ee.Kernel.square(radius, units, normalize, magnitude)
 
 
-def perona_malik(k:float = 3.5, iter: int = 10, method: int = 2) -> callable:
+def perona_malik(K=3.5, iterations=10, method=2) -> Callable:
     """translated from this example here https://mygeoblog.com/2021/01/22/perona-malik-filter/
 
     Args:
@@ -36,17 +37,13 @@ def perona_malik(k:float = 3.5, iter: int = 10, method: int = 2) -> callable:
 
     Returns:
         callable: _description_
-    """    
-    def perona_malik_wrapper(image: ee.Image):
-        K = k
-        iter = iter
-        method = method
-        
+    """
+    def wrapper(img: ee.Image):
         dxW = ee.Kernel.fixed(3, 3,
-                           [[ 0,  0,  0],
+                            [[ 0,  0,  0],
                             [ 1, -1,  0],
                             [ 0,  0,  0]]);
-  
+
         dxE = ee.Kernel.fixed(3, 3,
                                 [[ 0,  0,  0],
                                     [ 0, -1,  1],
@@ -67,7 +64,7 @@ def perona_malik(k:float = 3.5, iter: int = 10, method: int = 2) -> callable:
         k1 = ee.Image(-1.0/K);
         k2 = ee.Image(K).multiply(ee.Image(K));
 
-        for _ in range(0, iter): 
+        for _ in range(0, iterations): 
             dI_W = img.convolve(dxW)
             dI_E = img.convolve(dxE)
             dI_N = img.convolve(dyN)
@@ -93,4 +90,4 @@ def perona_malik(k:float = 3.5, iter: int = 10, method: int = 2) -> callable:
                         .add(cE.multiply(dI_E)).add(cW.multiply(dI_W))))
 
         return img
-    return perona_malik_wrapper
+    return wrapper
