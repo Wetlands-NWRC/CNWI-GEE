@@ -2,7 +2,7 @@ from abc import ABC
 
 import ee
 
-
+# TODO implement boxcar function that follow the same pattern as peroan malik 
 class SpatialFilter(ABC):
     pass
 
