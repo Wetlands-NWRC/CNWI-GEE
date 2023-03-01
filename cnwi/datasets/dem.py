@@ -8,4 +8,11 @@ class CDEM(ee.ImageCollection):
     
     def __init__(self):
         super().__init__(self._ASSET_ID)
+
+
+class SRTMV3(ee.Image):
+    _ASSET_ID = "USGS/SRTMGL1_003"
+    
+    def __init__(self):
+        super().__init__(self._ASSET_ID, None)
     
