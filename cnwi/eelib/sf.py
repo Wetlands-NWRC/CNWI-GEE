@@ -27,6 +27,14 @@ class Boxcar(SpatialFilter):
         return ee.Kernel.square(radius, units, normalize, magnitude)
 
 
+def gaussian_filter(radius: float, sigma: int = 1, units: str = None, normalize: bool = True, magnitude: float = 1.0) -> Callable:
+    units = 'pixels' if units is None else units
+    s_filter = ee.Kernel.gaussian(radius=radius, sigma=sigma, units=units, normalize=normalize, magnitude=magnitude)
+    def wrapper(image: ee.Image):
+        return image.convolve(s_filter)
+    return wrapper
+
+
 def perona_malik(K=3.5, iterations=10, method=2) -> Callable:
     """translated from this example here https://mygeoblog.com/2021/01/22/perona-malik-filter/
 

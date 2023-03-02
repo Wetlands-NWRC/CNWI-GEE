@@ -1,5 +1,5 @@
 import ee
-
+import tagee
 
 # Optical Derivatives
 class NDVI:
@@ -105,8 +105,6 @@ class Ratio:
         return derv.rename('Ratio')
 
 
-# DEM Derivatives
-class Slope:
-
-    def __new__(cls, image: ee.Image, elevation: str) -> ee.Image:
-        return ee.Terrain.slope(image.select('elevation'))
+def terrain_analysis(dem: ee.Image, bbox: ee.Geometry) -> ee.Image:
+    bands = ['Elevation', 'Slope', 'Horizontal curvature', 'Vertical curvature', 'Mean curvature', 'Gaussian curvature']
+    return tagee.terrainAnalysis(dem, bbox).select(bands)

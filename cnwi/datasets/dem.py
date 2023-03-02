@@ -15,4 +15,10 @@ class SRTMV3(ee.Image):
     
     def __init__(self):
         super().__init__(self._ASSET_ID, None)
-    
+
+
+class NASADEM_HGT(ee.Image):
+    _ASSET_ID = "NASA/NASADEM_HGT/001"
+
+    def __init__(self):
+        super().__init__(self._ASSET_ID)
