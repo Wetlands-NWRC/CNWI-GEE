@@ -73,7 +73,7 @@ class _Pipeline:
 class DataCubeClassification(_Pipeline):
     def __init__(self, optical, sar, training_data) -> None:
         seasons = funcs.data_cube_seasons()
-        opt = funcs.parse_season(optical, seasons)
+        opt = funcs.parse_season(optical.mean(), seasons)
         if isinstance(sar, ee.ImageCollection):
             sar = funcs.parse_s1_imgs(sar)
         super().__init__(opt, sar, training_data)
