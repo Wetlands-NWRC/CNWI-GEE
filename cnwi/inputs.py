@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass,field, InitVar
-from typing import Union, Iterable
+from dataclasses import dataclass, field, InitVar
+from typing import Dict, List, Callable
 
 import ee
 import tagee
@@ -37,16 +37,18 @@ class SARInputs:
 class DEMInputs:
     ee_image: InitVar[ee.Image]
     rectangle: InitVar[ee.Geometry]
-    s_filter: InitVar[function] = sf.gaussian_filter(3)
+    s_filter: Dict[Callable, List[int]] = field(default_factory=lambda: {sf.gaussian_filter(3): [0, 1, 2],
+                                                                         sf.perona_malik(): [3, 4, 5]})
     products: list[ee.Image] = field(default_factory=list)
     bands: list[str] = field(default_factory=lambda: [])
     
-    def __post_init__(self, ee_image, rectangle, s_filter):
-        smoothed = s_filter(ee_image)
-        dervi = tagee.terrainAnalysis(smoothed, rectangle).select(['Elevation', 'Slope', 'GaussianCurvature',
-                                                                   'HorizontalCurvature', 'VerticalCurvature',
-                                                                   'MeanCurvature'])
-        self.products.append(dervi)
+    def __post_init__(self, ee_image, rectangle):
+
+        for sfilt, selector in self.s_filter.items():
+            smoothed = sfilt(ee_image)
+            ta = tagee.terrainAnalysis(smoothed, rectangle).select(selector)
+            self.products.append(ta)
+            ta, smoothed = None, None
 
 
 def stack(optical_inputs: OpticalInputs, sar_inputs: SARInputs = None, dem_inputs: DEMInputs = None):
