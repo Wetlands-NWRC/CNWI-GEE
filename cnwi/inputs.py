@@ -40,7 +40,6 @@ class DEMInputs:
     s_filter: Dict[Callable, List[int]] = field(default_factory=lambda: {sf.gaussian_filter(3): [0, 1, 2],
                                                                          sf.perona_malik(): [3, 4, 5]})
     products: list[ee.Image] = field(default_factory=list)
-    bands: list[str] = field(default_factory=lambda: [])
     
     def __post_init__(self, ee_image, rectangle):
 
