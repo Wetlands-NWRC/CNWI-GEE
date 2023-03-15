@@ -6,7 +6,7 @@ import ee
 CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 os.chdir(CURRENT_DIR)
-sys.path.index(0, "../")
+sys.path.insert(0, "../")
 
 from cnwi import inputs
 from cnwi.datasets import dem
@@ -20,8 +20,8 @@ def test_dem_inputs():
     
     dem_inputs = inputs.DEMInputs(
         ee_image=dem.NASADEM_HGT().select('elevation'),
-    ), 
-    rectangle=rectangle
+        rectangle=rectangle
+    )
     
 
 
