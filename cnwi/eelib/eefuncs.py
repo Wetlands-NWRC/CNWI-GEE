@@ -225,3 +225,24 @@ def moa_calc(samples: ee.FeatureCollection, predictors: ee.List,
     values = predictors.map(calc_inner)
     zipped = predictors.zip(values)
     return zipped
+
+
+def create_rectangle(ee_object: Union[ee.FeatureCollection, ee.Geometry]) -> ee.Geometry:
+    """Creates a rectangle from a Feature Collection of Geometry"""
+    if isinstance(ee_object, ee.FeatureCollection):
+        geom = ee_object.geometry()
+    else:
+        geom = ee_object
+
+    coords = geom.bounds().coordinates()
+
+    listCoords = ee.Array.cat(coords, 1)
+    xCoords = listCoords.slice(1, 0, 1)
+    yCoords = listCoords.slice(1, 1, 2)
+
+    xMin = xCoords.reduce('min', [0]).get([0, 0])
+    xMax = xCoords.reduce('max', [0]).get([0, 0])
+    yMin = yCoords.reduce('min', [0]).get([0, 0])
+    yMax = yCoords.reduce('max', [0]).get([0, 0])
+
+    return ee.Geometry.Rectangle(xMin, yMin, xMax, yMax)
