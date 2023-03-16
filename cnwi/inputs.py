@@ -33,12 +33,13 @@ class SARInputs:
         self.products.extend(eefuncs.batch_create_ratio(pp_1, 'VV', 'VH'))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class DEMInputs:
     ee_image: InitVar[ee.Image]
     rectangle: InitVar[ee.Geometry]
-    s_filter: Dict[Callable, List[int]] = field(default_factory=lambda: {sf.gaussian_filter(3): [0, 1, 2],
-                                                                         sf.perona_malik(): [3, 4, 5]})
+    s_filter: Dict[Callable, List[int]] = field(default_factory=lambda: {sf.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
+                                                                         sf.perona_malik(): ['HorizontalCurvature', 'VerticalCurvature',
+                                                                                             'MeanCurvature']})
     products: list[ee.Image] = field(default_factory=list)
     
     def __post_init__(self, ee_image, rectangle):
@@ -48,6 +49,20 @@ class DEMInputs:
             ta = tagee.terrainAnalysis(smoothed, rectangle).select(selector)
             self.products.append(ta)
             ta, smoothed = None, None
+
+
+@dataclass
+class Additional:
+    products: list [ee.Image] = field(default_factory=list)
+    
+    def __len__(self):
+        return len(self.products)
+    
+    def __setitem__(self, _idx, _object):
+        self.products[_idx] = _object
+    
+    def __getitem__(self, key):
+        return self.products[key]
 
 
 def stack(optical_inputs: OpticalInputs, sar_inputs: SARInputs = None, dem_inputs: DEMInputs = None):
