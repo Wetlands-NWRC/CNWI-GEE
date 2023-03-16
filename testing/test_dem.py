@@ -22,9 +22,27 @@ def test_dem_inputs():
         ee_image=dem.NASADEM_HGT().select('elevation'),
         rectangle=rectangle
     )
+
+def test_dem_export():
+    # defaults
+    rectangle = eefuncs.create_rectangle(TARGET_AREA)
     
+    dem_inputs = inputs.DEMInputs(
+        ee_image=dem.NASADEM_HGT().select('elevation'),
+        rectangle=rectangle
+    )
+    
+    export_image = ee.Image.cat(*dem_inputs.products)
+    
+    ee.batch.Export.image.toDrive(
+        image=export_image,
+        folder='DEM_TESTING',
+        description="DEM_TA_TEST_1",
+        maxPixels=1e13,
+        region=rectangle
+    ).start()
 
 
 if __name__ == '__main__':
     ee.Initialize()
-    test_dem_inputs()
+    test_dem_export()
