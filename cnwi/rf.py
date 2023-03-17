@@ -62,3 +62,33 @@ def cnwi_random_forest(config: RandomForestCFG) -> RFOutput:
         classified=classified,
         samples=config.training_data
     )
+
+
+class rfmodel:
+    def __new__(cls, n_trees: int = 1000, var_per_split: int = None,  min_leaf: int = 1,
+                bag_fraction: float = 0.5, max_nodes: int = None, seed: int = 0) -> "ee.Classifier":
+        config = {
+            "numberOfTrees": n_trees,
+            "variablesPerSplit": var_per_split,
+            "minLeafPopulation": min_leaf,
+            "bagFraction": bag_fraction,
+            "maxNodes": max_nodes,
+            "seed": seed
+        }
+        
+        return ee.Classifier.smileRandomForest(**config)
+
+
+def train_rf_model(training_data: ee.FeatureCollection, model: rfmodel, predictors: list = None,
+                   class_property: str = None):
+    # set defaults
+    #TODO validate class_property, make sure it exists after the default value has been set
+    
+    trained_model = model.train(
+        features=training_data,
+        classProperty=class_property,
+        inputProperties=predictors
+    )
+    
+    return trained_model
+        
