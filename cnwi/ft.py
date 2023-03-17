@@ -11,7 +11,7 @@ class model:
         self.cos_names = [f'cos_{ _ }' for _ in frequencies]
         self.sin_name = [f'sin_{ _ }' for _ in frequencies]
         self.independent = ['constant', 't', *self.sin_name, *self.cos_names]
-        
+        self.dependent = dependent_var
         self.harmonics = ee_object.map(add_harmonics(
             freq=frequencies,
             cos_names=self.cos_names,
@@ -58,8 +58,9 @@ class amplitude:
 
 
 class meanDepdendent:
-    def __new__(cls, dependent_var: str = None) -> ee.Image:
-        pass
+    def __new__(cls, model: model, dependent_var: str = None) -> ee.Image:
+          return model.time_series.select(model.dependent).mean()\
+            .rename(f'{model.dependent}_mean')
 
 
 class fourierimage:
