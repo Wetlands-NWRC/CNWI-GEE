@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List
 
 import ee
@@ -7,6 +8,12 @@ from . import inputs
 from . import rf
 from . import td
 from .eelib import sf, eefuncs
+
+
+@dataclass
+class Output:
+    image: ee.Image
+    samples: ee.FeatureCollection
 
 
 class _Pipeline:
@@ -26,7 +33,7 @@ class _Pipeline:
         if elevation_dataset is not None and region is None:
             raise Exception("Region needs to spcified")
 
-    def run(self):
+    def run(self) -> Output:
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # construct TrainingData object
         training_data = td.TrainingData(
@@ -46,30 +53,32 @@ class _Pipeline:
             if self.elevation_dataset is not None else None
         # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # build stack
-        image_stack = inputs.stack(
-            optical_inputs=optical_inputs,
-            sar_inputs=sar_inputs,
-            dem_inputs=dem_inputs
-        )
+        imgs = (_.products for _ in (optical_inputs, sar_inputs, dem_inputs) if _ is not None )
+        stack = ee.Image.cat(*imgs)
         # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # Generate samples        
         td.generate_samples(
-            stack=image_stack,
+            stack=stack,
             training_data=training_data
         )
         # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# #
-        # Create Random Forest Config
-        rf_config = rf.RandomForestCFG(
-            stack = image_stack,
-            training_data = training_data
+        # Create rf model
+        rf_model = rf.rfmodel(
+            n_trees=1000
         )
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# 
-        # run random forest
-        random_forest = rf.cnwi_random_forest(
-            config = rf_config
+        # train the model
+        trained_model = rf.train_rf_model(
+            training_data=training_data.samples,
+            model=rf_model,
+            predictors=stack.bandNames(),
+            class_property=training_data.value
         )
-        return random_forest
         
+        # Classify the stack
+        stack_classified = stack.classify(trained_model)
+        
+        return Output(image=stack_classified, samples=training_data.samples)
 
 class DataCubeClassification(_Pipeline):
     def __init__(self, optical, sar, training_data) -> None:
