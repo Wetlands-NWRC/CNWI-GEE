@@ -80,6 +80,7 @@ class _Pipeline:
         
         return Output(image=stack_classified, samples=training_data.samples)
 
+
 class DataCubeClassification(_Pipeline):
     def __init__(self, optical, sar, training_data) -> None:
         seasons = funcs.data_cube_seasons()

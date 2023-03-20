@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Union
 
 import geopandas as gpd
 import ee
@@ -33,7 +34,7 @@ class TrainingData:
 
 
 def generate_samples(stack: ee.Image, training_data: TrainingData, scale: int = 10,
-                     projection = None, tile_scale: int = 16, geom: bool = False) -> TrainingData:
+                     projection = None, tile_scale: int = 16, geom: bool = False) -> Union[TrainingData, ee.FeatureCollection]:
     
     ee_lookup = ee.Dictionary(training_data.labels)
     
@@ -44,8 +45,10 @@ def generate_samples(stack: ee.Image, training_data: TrainingData, scale: int = 
         x,y = element.get('POINT_X'), element.get('POINT_Y')
         return ee.Feature(ee.Geometry.Point([x, y])).copyProperties(element)
     
+    to_sample = training_data.collection if isinstance(training_data, TrainingData) else training_data
+    
     samples = stack.sampleRegions(
-        collection = training_data.collection,
+        collection = to_sample,
         properties = [training_data.value, training_data.label, 'POINT_X', 'POINT_Y'],
         scale = scale,
         projection = projection,
