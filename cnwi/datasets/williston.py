@@ -1,27 +1,31 @@
+from dataclasses import dataclass, field
+
 import ee
 
 from . import struct
 from . import datacube
 
 
+@dataclass
+class WillistonA:
+    s1: list = field(default_factory=lambda: [
+        'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180517T142651_20180517T142716_010962_014115_CA58',
+        'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180728T142655_20180728T142720_012012_0161D6_96BF'
+    ])
+    s2: list = field(default_factory=lambda: [
+        'COPERNICUS/S2/20180519T191909_20180519T192621_T10UEF',
+        'COPERNICUS/S2/20180728T191909_20180728T192508_T10UEF'
+    ])
+
 class Williston_A_S2_IL(struct.ImageList):
     def __init__(self) -> None:
         """Williston A Senteniel 2 TOA GEE native assets. Only Valid for AOI A
         """        
         images = [
-            'COPERNICUS/S2/20180519T191909_20180519T192621_T10UEF',
-            'COPERNICUS/S2/20180728T191909_20180728T192508_T10UEF'
+          
         ]
         super().__init__(images)
 
-
-class Williston_A_S1_IL(struct.ImageList):
-    def __init__(self) -> None:
-        images = [
-            'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180517T142651_20180517T142716_010962_014115_CA58',
-            'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180728T142655_20180728T142720_012012_0161D6_96BF'
-        ]
-        super().__init__(images)
 
 
 class WillistonS164(ee.ImageCollection):
