@@ -9,3 +9,7 @@
 - General Updates
   - [x] Create create_rectangle function creates rectangle from feature collection or geometry -> put into eefuncs 
   - [] Make it so the pipeline can run with only certain products ex = Optical and not SAR, DEM and not SAR etc 
+
+# CNWI - GEE v1.0.8
+Major update. Will be refactoring and simplifying the package, and organizing it.
+
