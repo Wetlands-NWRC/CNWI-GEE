@@ -10,6 +10,22 @@ import tagee
 
 from .eelib import eefuncs, sf
 
+@dataclass
+class Inputs:
+    products: list = field(default_factory=list)
+
+
+def s2_inputs(assets: list[str]) -> Inputs:
+    pass
+
+
+def s1_inputs(assets: list[str], spatial_filter = None) -> Inputs:
+    pass
+
+
+def elevation_inputs(dem: ee.Image) -> Inputs:
+    pass
+
 
 @dataclass(frozen=True)
 class OpticalInputs:
