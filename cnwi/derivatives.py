@@ -73,7 +73,7 @@ def batch_create_ndvi(images: List[ee.Image], nir: str = None, red: str = None) 
 
 
 def batch_create_savi(images: List[ee.Image], nir: str = None, red: str = None,
-                      coef: float = 0.5) -> List[derivatives.SAVI]:
+                      coef: float = 0.5) -> List[ee.Image]:
     return [savi(image=img, NIR=nir, RED=red, coef=coef) for img in images]
 
 
