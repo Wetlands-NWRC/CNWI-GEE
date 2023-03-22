@@ -86,22 +86,31 @@ def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
     return [*sar_pp1, *ratios]
 
 
-def elevation_inputs(rectangle: ee.Geometry, image: ee.Image = None, s_filter: Dict[Callable, List[Union[str, int]]] = None):
+def elevation_inputs(rectangle: ee.Geometry = None, image: ee.Image = None, s_filter: Dict[Callable, List[Union[str, int]]] = None):
     image = nasa_dem() if image is None else image
-    if s_filter is None:
-        s_filter = {
-            sfilters.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
-            sfilters.perona_malik(): ['HorizontalCurvature', 'VerticalCurvature', 'MeanCurvature']
-        }
-    
-    out = []
-    for filter, selector in s_filter.items():
-        smoothed = filter(image)
-        ta = tagee.terrainAnalysis(smoothed, rectangle).select(selector)
-        out.append(ta)
-        ta, smoothed = None, None
-    return out 
+    def terrain_analysis():
+        if s_filter is None:
+            s_filter = {
+                sfilters.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
+                sfilters.perona_malik(): ['HorizontalCurvature', 'VerticalCurvature', 'MeanCurvature']
+            }
         
+        out = []
+        for filter, selector in s_filter.items():
+            smoothed = filter(image)
+            ta = tagee.terrainAnalysis(smoothed, rectangle).select(selector)
+            out.append(ta)
+            ta, smoothed = None, None
+        return out
+    
+    if rectangle is None:
+        s_filter = sfilters.gaussian_filter(3)
+        smoothed = s_filter(image)
+        slope = ee.Terrain.slope(smoothed)
+        return [smoothed, slope]
+    else:
+        return terrain_analysis()
+            
 
 def data_cube_inputs(collection: ee.ImageCollection) -> List[ee.Image]:
     band_prefix = {"spring": "a_spri_b.*", "summer": 'b_summ_b.*', "fall": "c_fall_b.*"}
@@ -111,9 +120,9 @@ def data_cube_inputs(collection: ee.ImageCollection) -> List[ee.Image]:
     
     s2_sr = bands.S2SR.bands()[0]
     band_idx = [idx for idx, _ in enumerate(s2_sr)]
-    spring_col = col.select(band_prefix.get("spring")).select([band_idx], s2_sr)
-    summer_col =  col.select(band_prefix.get('summer')).select([band_idx], s2_sr)
-    fall_col = col.select(band_prefix.get('fall')).select([band_idx], s2_sr)    
+    spring_col = col.select(band_prefix.get("spring")).select(band_idx, s2_sr)
+    summer_col =  col.select(band_prefix.get('summer')).select(band_idx, s2_sr)
+    fall_col = col.select(band_prefix.get('fall')).select(band_idx, s2_sr)    
 
     s2s = [spring_col.mosaic(), summer_col.mosaic(), fall_col.mosaic()]
 

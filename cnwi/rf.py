@@ -16,7 +16,7 @@ class RandomForestModel:
     
     @property
     def classifier(self):
-        return ee.Classifer.smileRandomForest(**self.__dict__)
+        return ee.Classifier.smileRandomForest(**self.__dict__)
 
     def train(self, training_data: ee.FeatureCollection, predictors: List[str], classProperty: str) -> "ee.Classifier":
         """trains the random forest model

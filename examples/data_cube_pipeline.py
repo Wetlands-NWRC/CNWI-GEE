@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
 import ee
 
 from cnwi import inputs, rf, td, funcs, sfilters
 from cnwi import prebuilt
-
 
 
 def main():
@@ -22,7 +19,8 @@ def main():
     s1s = inputs.s1_inputs(williston.s1)
     
     # create s2 inputs
-    s2s = inputs.s2_inputs(williston.s2)
+    data_cube_collection = ee.ImageCollection("projects/fpca-336015/assets/williston-cba").filterBounds(dataset)
+    s2s = inputs.data_cube_inputs(data_cube_collection)
     
     # create elevation inputs
     elevation = inputs.nasa_dem()
