@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Earth Engine Pipeline",
+            "type": "python",
+            "request": "launch",
+            "module": "examples.earth_engine_pipeline",
+            "justMyCode": true
+        },
+        {
             "name": "Python: Datasets.Williston",
             "type": "python",
             "request": "launch",
