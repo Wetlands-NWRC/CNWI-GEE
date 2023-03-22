@@ -3,11 +3,11 @@ from typing import List
 
 import ee
 
-from . import funcs
+from . import funcs, sfilters
 from . import inputs
 from . import rf
 from . import td
-from .eelib import sf, eefuncs
+from .eelib import eefuncs
 
 
 @dataclass
@@ -48,7 +48,7 @@ class _Pipeline:
         # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # build inputs
         optical_inputs = inputs.OpticalInputs(self.optical) if self.optical is not None else None
-        sar_inputs = inputs.SARInputs(self.sar, sf.Boxcar(1)) if self.sar is not None else None
+        sar_inputs = inputs.SARInputs(self.sar, sfilters.Boxcar(1)) if self.sar is not None else None
         dem_inputs = inputs.DEMInputs(self.elevation_dataset, rectangle=rectangle) \
             if self.elevation_dataset is not None else None
         # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
