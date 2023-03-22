@@ -3,10 +3,12 @@ from typing import Callable
 import ee
 
 
-def boxcar(radius: float, units: str = None, normalize: bool = True, magnitude: float = 1.0):
+def boxcar(radius: float, units: str = None, normalize: bool = True, magnitude: float = 1.0) -> Callable:
     units = 'pixels' if units is None else units
-    return ee.Kernel.square(radius, units, normalize, magnitude)
-
+    s_filter = ee.Kernel.square(radius, units, normalize, magnitude)
+    def wrapper(image: ee.Image):
+        return image.convolve(s_filter)
+    return wrapper
 
 def gaussian_filter(radius: float, sigma: int = 1, units: str = None, normalize: bool = True, magnitude: float = 1.0) -> Callable:
     units = 'pixels' if units is None else units
