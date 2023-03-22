@@ -28,7 +28,7 @@ def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
     s1s = [imgs.Sentinel1(_) for _ in assets]
     # sar inputs
     s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
-    sar_pp1 = eefuncs.batch_despeckle(s1s, s_filter)
+    sar_pp1 = [s_filter(_) for _ in s1s]
     # sar derivatives
     ratios = driv.batch_create_ratio(
         images=sar_pp1,
