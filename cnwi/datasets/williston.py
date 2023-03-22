@@ -6,7 +6,7 @@ from . import struct
 from . import datacube
 
 
-@dataclass
+@dataclass(frozen=True)
 class WillistonA:
     s1: list = field(default_factory=lambda: [
         'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180517T142651_20180517T142716_010962_014115_CA58',
@@ -17,9 +17,21 @@ class WillistonA:
         'COPERNICUS/S2/20180728T191909_20180728T192508_T10UEF'
     ])
     dem: str = field(default="")
+    
+    @property
+    def sentinel1(self):
+        pass
+    
+    @property
+    def sentinel2(self):
+        pass
+    
+    @property
+    def elevation(self):
+        pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class WillistonDataCube:
     asset_id: str = field("projects/fpca-336015/assets/williston-cba")
     s1: list = field(default_factory= lambda: [
@@ -33,3 +45,11 @@ class WillistonDataCube:
         "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015528_20180913T015553_012690_0176B4_0EB4",
         "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015553_20180913T015613_012690_0176B4_EB44"
     ])
+
+    @property
+    def sentinel1(self) -> list[ee.Image]:
+        pass
+    
+    @property
+    def sentinel2(self) -> list[ee.Image]:
+        pass
