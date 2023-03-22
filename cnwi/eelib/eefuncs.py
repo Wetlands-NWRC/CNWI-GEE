@@ -2,7 +2,9 @@ from typing import Dict, List, Union
 
 import ee
 
-from . import deriv, sf, td
+from .. import derivatives, sfilters
+
+from . import td
 
 
 def co_register(this_image: ee.Image, ref_image: ee.Image, max_offset: float,
@@ -19,7 +21,7 @@ def co_register(this_image: ee.Image, ref_image: ee.Image, max_offset: float,
     )
 
 
-def despeckle(images: Union[ee.ImageCollection, ee.Image], filter: sf.Boxcar):
+def despeckle(images: Union[ee.ImageCollection, ee.Image], filter: sfilters.Boxcar):
     """Applys a defined spatial filter to either a single image or an image
     collection. If an image collection is passed it will apply the filter to
     every image in the Image collection
@@ -58,7 +60,7 @@ def batch_co_register(images: List[ee.Image], max_offset: float,
     return images
 
 
-def batch_despeckle(images: List[ee.Image], filter: sf.Boxcar):
+def batch_despeckle(images: List[ee.Image], filter: sfilters.Boxcar):
     """applys a spatial filter to each image in the image list. Only works on
     list of images. Not Image Collection. If using image collection use the 
     eefuncs.despeckle function.
@@ -73,24 +75,24 @@ def batch_despeckle(images: List[ee.Image], filter: sf.Boxcar):
     return [despeckle(i, filter) for i in images]
 
 
-def batch_create_ratio(images: List[ee.Image], numerator: str, denominator: str) -> List[deriv.Ratio]:
-    return [deriv.Ratio(img, numerator, denominator) for img in images]
+def batch_create_ratio(images: List[ee.Image], numerator: str, denominator: str) -> List[derivatives.Ratio]:
+    return [derivatives.Ratio(img, numerator, denominator) for img in images]
 
 
-def batch_create_ndvi(images: List[ee.Image], nir: str = None, red: str = None) -> List[deriv.NDVI]:
-    return [deriv.NDVI(img, NIR=nir, RED=red) for img in images]
+def batch_create_ndvi(images: List[ee.Image], nir: str = None, red: str = None) -> List[derivatives.NDVI]:
+    return [derivatives.NDVI(img, NIR=nir, RED=red) for img in images]
 
 
 def batch_create_savi(images: List[ee.Image], nir: str = None, red: str = None,
-                      coef: float = 0.5) -> List[deriv.SAVI]:
-    return [deriv.SAVI(image=img, NIR=nir, RED=red, coef=coef) for img in images]
+                      coef: float = 0.5) -> List[derivatives.SAVI]:
+    return [derivatives.SAVI(image=img, NIR=nir, RED=red, coef=coef) for img in images]
 
 
 def batch_create_tassel_cap(images: List[ee.Image], blue: str = None, red: str = None,
                             green: str = None, nir: str = None, swir_1: str = None,
-                            swir_2=None) -> List[deriv.TasselCap]:
+                            swir_2=None) -> List[derivatives.TasselCap]:
 
-    bands = [deriv.TasselCap(image=img, blue=blue, red=red, green=green,
+    bands = [derivatives.TasselCap(image=img, blue=blue, red=red, green=green,
                              nir=nir, swir_1=swir_1, swir_2=swir_2)
              for img in images]
 
