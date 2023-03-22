@@ -7,8 +7,11 @@ from typing import Dict, List, Callable
 import ee
 import tagee
 
+from . import imgs
+from . import sfilters
+from . import derivatives as driv
 
-from .eelib import eefuncs, sf
+from .eelib import eefuncs
 
 @dataclass
 class Inputs:
@@ -20,7 +23,18 @@ def s2_inputs(assets: list[str]) -> Inputs:
 
 
 def s1_inputs(assets: list[str], spatial_filter = None) -> Inputs:
-    pass
+    # prep the inputs
+    s1s = [imgs.Sentinel1(_) for _ in s1]
+    # sar inputs
+    boxcar = sfilters.boxcar(1)
+    sar_pp1 = eefuncs.batch_despeckle(s1s, boxcar)
+    
+    # sar derivatives
+    ratios = driv.batch_create_ratio(
+        images=sar_pp1,
+        numerator='VV',
+        denominator='VH'
+    )
 
 
 def elevation_inputs(dem: ee.Image) -> Inputs:
@@ -53,8 +67,8 @@ class SARInputs:
 class DEMInputs:
     ee_image: InitVar[ee.Image]
     rectangle: InitVar[ee.Geometry]
-    s_filter: Dict[Callable, List[int]] = field(default_factory=lambda: {sf.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
-                                                                         sf.perona_malik(): ['HorizontalCurvature', 'VerticalCurvature',
+    s_filter: Dict[Callable, List[int]] = field(default_factory=lambda: {sfilters.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
+                                                                         sfilters.perona_malik(): ['HorizontalCurvature', 'VerticalCurvature',
                                                                                              'MeanCurvature']})
     products: list[ee.Image] = field(default_factory=list)
     
