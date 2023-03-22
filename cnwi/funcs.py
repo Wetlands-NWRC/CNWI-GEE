@@ -5,6 +5,7 @@ import ee
 from .datasets.datacube import DataCube
 from .datasets.struct import ImageList
 from . import bands
+from . import td
 
 
 def parse_season(collection: DataCube, seasons_dict: dict[str, dict[str, str]]) -> list[ee.Image]:
@@ -57,3 +58,32 @@ def parse_s1_imgs(collection: ee.ImageCollection):
                 in enumerate(collection.toList(collection.size()).getInfo())]
 
     return ImageList(imgs)
+
+
+def generate_samples(stack: ee.Image, training_data: td.TrainingData, scale: int = 10,
+                     projection = None, tile_scale: int = 16, geom: bool = False) -> Union[TrainingData, ee.FeatureCollection]:
+    # TODO move to funcs, make so that will return a feature collection, if TD passes will returned an updated training data object
+    ee_lookup = ee.Dictionary(training_data.labels)
+    
+    def insert_value(element: ee.Feature):
+        return element.set(training_data.value, ee_lookup.get(element.get(training_data.label)))
+    
+    def add_geometry(element: ee.Feature):
+        x,y = element.get('POINT_X'), element.get('POINT_Y')
+        return ee.Feature(ee.Geometry.Point([x, y])).copyProperties(element)
+    
+    to_sample = training_data.collection if isinstance(training_data, td.TrainingData)\
+        else training_data
+    
+    samples = stack.sampleRegions(
+        collection = to_sample,
+        properties = [training_data.value, training_data.label, 'POINT_X', 'POINT_Y'],
+        scale = scale,
+        projection = projection,
+        tileScale = tile_scale,
+        geometries = geom
+    ).map(insert_value).map(add_geometry)
+    
+    training_data.samples = samples
+    
+    return training_data
