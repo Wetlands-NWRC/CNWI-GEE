@@ -1,19 +1,14 @@
-from . import imgs
-from . import sfilters
-from . import td
-from . import derivatives as driv
+from typing import List, Tuple
+import ee
 
 from .eelib import eefuncs
+from . import inputs
+from . import rf
+from . import td
 
 
-def pipeline(training_data, s2 = None, s1 = None dem = None):
-    """Runs a standard Random Forest Classification
-
-    Args:
-        training_data (_type_): _description_
-        optical (_type_, optional): _description_. Defaults to None.
-        sar (_type_, optional): _description_. Defaults to Nonedem=None.
-    """
+def rf_classification(s1: List[str], s2: List[str], training_data: td.TrainingData, 
+                      rectanlge: ee.Geometry, dem: ee.Image = None) -> Tuple[ee.Image, ee.FeatureCollection):
     
     """
     Pipeline will follow this pattern
@@ -31,20 +26,28 @@ def pipeline(training_data, s2 = None, s1 = None dem = None):
     
     create an output class, training_samples (with geometry maintained), classified image 
     """
-    # prep the inputs
-    s1s = [imgs.Sentinel1(_) for _ in s1]
-    # sar inputs
-    boxcar = sfilters.boxcar(1)
-    sar_pp1 = eefuncs.batch_despeckle(s1s, boxcar)
+    s1 = inputs.s1_inputs(s1)
+    s2 = inputs.s2_inputs(s2)
     
-    # sar derivatives
-    ratios = driv.batch_create_ratio(
-        images=sar_pp1,
-        numerator='VV',
-        denominator='VH'
+    
+    dem = inputs.elevation_inputs(
+        rectangle=rectanlge
     )
     
-   
+    stack = ee.Image.cat(*s1, *s2, *dem)
     
-
+    td.generate_samples(stack, training_data)
+    
+    model = rf.RandomForestModel()
+    trained = model.train(
+        training_data=training_data.samples,
+        predictors=stack.bandNames(),
+        classProperty=training_data.value
+    )
+    
+    classified_img = stack.classify(trained)
+    
+    return classified_img, training_data.samples
+    
+    
     
