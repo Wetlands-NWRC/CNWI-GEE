@@ -13,11 +13,10 @@ class RandomForestModel:
         self.bagFraction = bagFraction
         self.maxNodes = maxNodes
         self.seed = seed
-        self._classifier = ee.Classifier.smileRandomForest
     
     @property
     def classifier(self):
-        return self._classifier(**self.__dict__)
+        return ee.Classifer.smileRandomForest(**self.__dict__)
 
     def train(self, training_data: ee.FeatureCollection, predictors: List[str], classProperty: str) -> "ee.Classifier":
         """trains the random forest model

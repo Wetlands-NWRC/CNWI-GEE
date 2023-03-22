@@ -1,19 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, InitVar
 from typing import Dict, List, Callable, Union
 
 import ee
 import tagee
 
-from . import imgs
-from . import sfilters
+from . import sfilters, funcs, bands
 from . import derivatives as driv
 
-from .eelib import eefuncs
-
-import ee
-import tagee
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 def sentinel1(asset):
@@ -45,8 +39,10 @@ def sentinel2(asset) -> ee.Image:
     return ee.Image(asset).select('B.*')
 
 
-def data_cube(asset, target_yyyy: int = 2018):
-    pass    
+def data_cube(asset: str, aoi: ee.Geometry):
+    dc = ee.ImageCollection(asset).filterBounds(aoi)
+    # parse the data cube images into 3 seperate images, spring, summer, fall
+    return funcs.data_cube_images
 
     
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -106,3 +102,23 @@ def elevation_inputs(rectangle: ee.Geometry, image: ee.Image = None, s_filter: D
         ta, smoothed = None, None
     return out 
         
+
+def data_cube_inputs(collection: ee.ImageCollection) -> List[ee.Image]:
+    band_prefix = {"spring": "a_spri_b.*", "summer": 'b_summ_b.*', "fall": "c_fall_b.*"}
+    
+    old, new = bands.DataCube.bands()
+    col = collection.select(old, new)
+    
+    s2_sr = bands.S2SR.bands()[0]
+    band_idx = [idx for idx, _ in enumerate(s2_sr)]
+    spring_col = col.select(band_prefix.get("spring")).select([band_idx], s2_sr)
+    summer_col =  col.select(band_prefix.get('summer')).select([band_idx], s2_sr)
+    fall_col = col.select(band_prefix.get('fall')).select([band_idx], s2_sr)    
+
+    s2s = [spring_col.mosaic(), summer_col.mosaic(), fall_col.mosaic()]
+
+    ndvis = driv.batch_create_ndvi(s2s)
+    savis = driv.batch_create_savi(s2s)
+    tassels = driv.batch_create_tassel_cap(s2s)
+
+    return [*s2s, *ndvis, *savis, *tassels]

@@ -1,6 +1,13 @@
 from enum import Enum
 
 
+class _BANDS(Enum):
+    
+    @classmethod
+    def bands(cls):
+        return ([str(_.name) for _ in cls], [str(_.value) for _ in cls])
+
+
 class S2TOA(Enum):
     B1 = 'Aerosols'
     B2 = 'Blue'
@@ -17,7 +24,7 @@ class S2TOA(Enum):
     B12 = 'SWIR 2'
 
 
-class S2SR(Enum):
+class S2SR(_BANDS):
     B1 = 'Aerosols'
     B2 = 'Blue'
     B3 = 'Green'
@@ -47,7 +54,7 @@ class S2DCParsed(Enum):
     B11 = 'SWIR 2'
 
 
-class WillistonCBA(Enum):
+class DataCube(_BANDS):
     """Original Data Cube Band Mappings"""
     B0 = 'a_spri_b01_60m'
     B1 = 'a_spri_b02_10m'
