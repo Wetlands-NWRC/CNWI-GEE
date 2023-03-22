@@ -1,31 +1,50 @@
+from . import imgs
+from . import sfilters
+from . import td
+from . import derivatives as driv
+
+from .eelib import eefuncs
 
 
-class datacube:
+def pipeline(training_data, s2 = None, s1 = None dem = None):
+    """Runs a standard Random Forest Classification
+
+    Args:
+        training_data (_type_): _description_
+        optical (_type_, optional): _description_. Defaults to None.
+        sar (_type_, optional): _description_. Defaults to Nonedem=None.
+    """
     
-    def __init__(self, stack, training_data, viewport = None) -> None:
-        self._stack = stack
-        self._training_data = training_data
+    """
+    Pipeline will follow this pattern
+    take s1, s2, dem inputs do some pre-processing
     
-        # add some Tuning paramaters
-        # number of trees
-        # predictors 
-        # label column
+    create stack to sample from
     
-    def run(self) -> None:
-        # prep training data
-        # set land cover object
-        # if data frame convert to feature collection etc
-        # sample the stack
-        # create the rf config
-        # run random forest
-        # set output prop to RFOutput
-        return None
+    generate samples to train model
     
-    def mapping(self) -> dict[str, Any]:
-        # only for jupyter notebooks
-        pass
+    create the rf model
     
-    def export(self):
-        pass
+    train tf model
     
+    classify the stack
+    
+    create an output class, training_samples (with geometry maintained), classified image 
+    """
+    # prep the inputs
+    s1s = [imgs.Sentinel1(_) for _ in s1]
+    # sar inputs
+    boxcar = sfilters.boxcar(1)
+    sar_pp1 = eefuncs.batch_despeckle(s1s, boxcar)
+    
+    # sar derivatives
+    ratios = driv.batch_create_ratio(
+        images=sar_pp1,
+        numerator='VV',
+        denominator='VH'
+    )
+    
+   
+    
+
     
