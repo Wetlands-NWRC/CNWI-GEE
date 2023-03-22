@@ -4,11 +4,19 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+    
         {
             "name": "Python: Earth Engine Pipeline",
             "type": "python",
             "request": "launch",
             "module": "examples.earth_engine_pipeline",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: DataCube Pipeline",
+            "type": "python",
+            "request": "launch",
+            "module": "examples.data_cube_pipeline",
             "justMyCode": true
         },
         {
