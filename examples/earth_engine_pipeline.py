@@ -3,18 +3,14 @@ from dataclasses import dataclass
 import ee
 
 from cnwi import inputs, rf, td, funcs
+from cnwi import prebuilt
 
-@dataclass
-class EEDataSets:
-    s1: list = None
-    s2: list = None
-    training: dict = None
-    region: ee.FeatureCollection = None
 
 
 def main():
     # load dataset
     dataset = ee.FeatureCollection("<Some Dataset>")
+    williston = prebuilt.WillistonA()
     
     # create a training object
     training = td.TrainingData(
@@ -22,13 +18,13 @@ def main():
     )
     
     # create s1 inputs
-    s1s = inputs.s1_inputs(EEDataSets.s1)
+    s1s = inputs.s1_inputs(williston.s1)
     
     # create s2 inputs
-    s2s = inputs.s2_inputs(EEDataSets.s2)
+    s2s = inputs.s2_inputs(williston.s2)
     
     # create elevation inputs
-    geom = EEDataSets.region.geometry()
+    geom = ee.FeatureCollection(williston.region).geometry()
     ee_rectangle = funcs.create_rectangle(geom)
     dem = inputs.elevation_inputs(
         rectangle=ee_rectangle
