@@ -30,13 +30,21 @@ class ALOS:
 
 
 class Sentinel2:
-    def __new__(cls) -> ee.Image:
-        pass
+    def __new__(cls, asset_id: str) -> ee.Image:
+        """Constructs a new ee.Image, the QA bands are not returned
+
+        Args:
+            asset_id (str): asset id of a sentinel 2 image
+
+        Returns:
+            ee.Image: a constricted image with only spectral bands selects
+        """
+        return ee.Image(asset_id).select('B.*')
 
 
 class DataCube:
     TARGET_YEAR = 2018
-    def __new__(cls) -> ee.Image:
+    def __new__(cls, asset_id: str) -> ee.Image:
         """Represents a Cloud back asset, images are from Geomatics Data Cube"""
         # access the parsing and date 
         pass
@@ -50,5 +58,11 @@ class DEM:
 
 
 class AAFC:
-    def __new__(cls, target_yyyy: int = 2018, ) -> ee.Image:
-        pass
+    def __new__(cls, target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
+        instance = ee.ImageCollection("AAFC/ACI").filterDate(target_yyyy, (target_yyyy + 1))
+        if aoi is None:
+            return instance.filterBounds(aoi).first()
+        else:
+            return instance.first()
+
+    
