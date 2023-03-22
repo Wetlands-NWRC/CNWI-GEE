@@ -20,9 +20,9 @@ class TrainingData:
         ee_lookup = ee.Dictionary.fromLists(labels, values)
         
         self.collection = self.collection.map(funcs.add_xy_property)\
-            .map(self._insert_values(self.label, ee_lookup))
+            .map(self._standardize(self.label, ee_lookup))
 
-    def _insert_values(self, column, lookup) -> callable:
+    def _standardize(self, column, lookup) -> callable:
         def wrapper(element: ee.Feature):
             key = element.get(column)
             new = element.set({
@@ -36,7 +36,6 @@ class TrainingData:
                geom: bool = False) -> None:
         samples = stack.sampleRegions(
             collection = self.collection,
-            properties = [self.value, self.label, 'POINT_X', 'POINT_Y'],
             scale = scale,
             projection = projection,
             tileScale = tile_scale,
