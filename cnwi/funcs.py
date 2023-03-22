@@ -4,7 +4,7 @@ import ee
 
 from .datasets.datacube import DataCube
 from .datasets.struct import ImageList
-from .eelib import bands
+from . import bands
 
 
 def parse_season(collection: DataCube, seasons_dict: dict[str, dict[str, str]]) -> list[ee.Image]:
