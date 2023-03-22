@@ -47,3 +47,8 @@ class DEM:
         # construct
         ee_obj = ee.Image(asset_id).select('elevation')
         return tagee.terrainAnalysis(ee_obj, rectangle)
+
+
+class AAFC:
+    def __new__(cls, target_yyyy: int = 2018, ) -> ee.Image:
+        pass
