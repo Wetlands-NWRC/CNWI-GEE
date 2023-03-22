@@ -50,13 +50,6 @@ class DataCube:
         pass
 
 
-class DEM:
-    def __new__(cls, asset_id: str, rectangle: ee.Geometry) -> ee.Image:
-        # construct
-        ee_obj = ee.Image(asset_id).select('elevation')
-        return tagee.terrainAnalysis(ee_obj, rectangle)
-
-
 class AAFC:
     def __new__(cls, target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
         instance = ee.ImageCollection("AAFC/ACI").filterDate(target_yyyy, (target_yyyy + 1))
@@ -65,4 +58,16 @@ class AAFC:
         else:
             return instance.first()
 
+
+class DEM(ee.Image):
+    def __init__(self, args=None, version=None):
+        super().__init__(args, version)
+    
+    def terrain_analysis(self, rectangle) -> ee.Image:
+        return tagee.terrainAnalysis(self, rectangle)        
+
+
+class NASADEM_HGT(DEM):
+    def __init__(self):
+        super().__init__("NASA/NASADEM_HGT/001", None)
     
