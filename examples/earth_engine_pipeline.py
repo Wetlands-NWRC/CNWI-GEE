@@ -2,19 +2,20 @@ from dataclasses import dataclass
 
 import ee
 
-from cnwi import inputs, rf, td, funcs
+from cnwi import inputs, rf, td, funcs, sfilters
 from cnwi import prebuilt
 
 
 
 def main():
     # load dataset
-    dataset = ee.FeatureCollection("<Some Dataset>")
+    dataset = ee.FeatureCollection("users/ryangilberthamilton/BC/williston/fpca/willistonA_no_floodplain")
     williston = prebuilt.WillistonA()
     
     # create a training object
     training = td.TrainingData(
-        collection=dataset
+        collection=dataset,
+        label='cDesc'
     )
     
     # create s1 inputs
@@ -24,19 +25,17 @@ def main():
     s2s = inputs.s2_inputs(williston.s2)
     
     # create elevation inputs
-    geom = ee.FeatureCollection(williston.region).geometry()
-    ee_rectangle = funcs.create_rectangle(geom)
-    dem = inputs.elevation_inputs(
-        rectangle=ee_rectangle
-    )
+    elevation = inputs.nasa_dem()
+    filter = sfilters.gaussian_filter(3)
+    smoothed = filter(elevation)
+    slope = ee.Terrain.slope(smoothed)
     
     # Create the inputs stack
-    stack = ee.Image.cat(*s1s, *s2s, *dem)
+    stack = ee.Image.cat(*s1s, *s2s, smoothed, slope)
     
     # sample the stack
-    funcs.generate_samples(
-        stack=stack,
-        training_data=training
+    training.sample(
+        stack=stack
     )
     
     # create the rf model

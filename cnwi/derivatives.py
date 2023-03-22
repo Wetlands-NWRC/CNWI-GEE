@@ -33,7 +33,7 @@ def savi(image: ee.Image, nir: str = None, red: str = None, coef: float = 0.5):
     return savi.rename('SAVI')
 
 
-def tassel_cap(mage: ee.Image, blue: str = None, red: str = None,
+def tassel_cap(image: ee.Image, blue: str = None, red: str = None,
                 green: str = None, nir: str = None, swir_1: str = None,
                 swir_2: str = None) -> ee.Image:
 
@@ -69,12 +69,12 @@ def tassel_cap(mage: ee.Image, blue: str = None, red: str = None,
 
 
 def batch_create_ndvi(images: List[ee.Image], nir: str = None, red: str = None) -> List[ee.Image]:
-    return [ndvi(img, NIR=nir, RED=red) for img in images]
+    return [ndvi(img, nir=nir, red=red) for img in images]
 
 
 def batch_create_savi(images: List[ee.Image], nir: str = None, red: str = None,
                       coef: float = 0.5) -> List[ee.Image]:
-    return [savi(image=img, NIR=nir, RED=red, coef=coef) for img in images]
+    return [savi(image=img, nir=nir, red=red, coef=coef) for img in images]
 
 
 def batch_create_tassel_cap(images: List[ee.Image], blue: str = None, red: str = None,
