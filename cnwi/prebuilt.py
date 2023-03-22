@@ -2,22 +2,12 @@ from dataclasses import dataclass, field
 
 import ee
 
-from . import imgs
 
 @dataclass(frozen=True)
 class PreBuildDataSet:
     s1: list[str]
     s2: list[str]
-    dem: imgs.NASADEM_HGT = imgs.NASADEM_HGT()
-    
-    @property
-    def sentinel1(self):
-        return [imgs.Sentinel1(_) for _ in self.s1]
-    
-    @property
-    def sentinel2(self):
-        return [imgs.Sentinel2(_) for _ in self.s2]
-    
+
 
 @dataclass(frozen=True)
 class WillistonA(PreBuildDataSet):
@@ -29,11 +19,12 @@ class WillistonA(PreBuildDataSet):
         'COPERNICUS/S2/20180519T191909_20180519T192621_T10UEF',
         'COPERNICUS/S2/20180728T191909_20180728T192508_T10UEF'
     ])
+    region: str = "users/ryangilberthamilton/BC/williston/williston_sub_a_2019"
 
 
 @dataclass(frozen=True)
 class WillistonDataCube:
-    asset_id: str = field("projects/fpca-336015/assets/williston-cba")
+    asset_id: str = field(default="projects/fpca-336015/assets/williston-cba")
     s1: list = field(default_factory= lambda: [
         "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015452_20180609T015517_011290_014BA0_39FD",
         "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180609T015517_20180609T015542_011290_014BA0_2658",
