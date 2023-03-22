@@ -1,6 +1,6 @@
 import ee
 
-from .. import eefactory
+from . import eefactory
 
 if not ee.data._credentials:
     ee.Initialize()
