@@ -37,12 +37,3 @@ class WillistonDataCube:
         "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015553_20180913T015613_012690_0176B4_EB44"
     ])
 
-    @property
-    def sentinel1(self) -> list[ee.Image]:
-        # TODO overdied with image collection parsers
-        pass
-    
-    @property
-    def sentinel2(self) -> list[ee.Image]:
-        # TODO override with data cube parser
-        pass
