@@ -1,70 +1,133 @@
 from __future__ import annotations
 
-from abc import ABC
-from dataclasses import dataclass, field, InitVar
-from typing import Dict, List, Callable
+from typing import Dict, List, Callable, Union
 
 import ee
 import tagee
 
-
-from .eelib import eefuncs, sf
-
-
-@dataclass(frozen=True)
-class OpticalInputs:
-    ee_images: InitVar[list[ee.Image]]
-    products:list[ee.Image] = field(default_factory=list)
-    def __post_init__(self, ee_images):
-        self.products.extend(ee_images)
-        self.products.extend(eefuncs.batch_create_ndvi(ee_images))
-        self.products.extend(eefuncs.batch_create_savi(ee_images))
-        self.products.extend(eefuncs.batch_create_tassel_cap(ee_images))
+from . import sfilters, funcs, bands
+from . import derivatives as driv
 
 
-@dataclass(frozen=True)
-class SARInputs:
-    ee_images: InitVar[list[ee.Image]]
-    s_filter: InitVar
-    products: list[ee.Image] = field(default_factory=list)
-    def __post_init__(self, ee_images, s_filter):
-        pp_1 = eefuncs.batch_despeckle(ee_images, s_filter)
-        self.products.extend(pp_1)
-        self.products.extend(eefuncs.batch_create_ratio(pp_1, 'VV', 'VH'))
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+def sentinel1(asset):
+    """
+    DV = VV + VH
+    DH = HH + HV
+    SV = VV
+    SH = HH
+    """
+    image = ee.Image(asset)
+    if 'DV' in asset or 'SV' in asset:
+        image = image.select('V.*')
+    elif 'DH' in asset or 'SH' in asset:
+        image = image.select('H.*')
+    else:
+        raise TypeError("Not at Valid Sentinel 1 Asset - id")
+    return image
 
 
-@dataclass(frozen=False)
-class DEMInputs:
-    ee_image: InitVar[ee.Image]
-    rectangle: InitVar[ee.Geometry]
-    s_filter: Dict[Callable, List[int]] = field(default_factory=lambda: {sf.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
-                                                                         sf.perona_malik(): ['HorizontalCurvature', 'VerticalCurvature',
-                                                                                             'MeanCurvature']})
-    products: list[ee.Image] = field(default_factory=list)
+def alos(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
+    alos_collection = ee.ImageCollection("").filterDate(f'{target_yyyy}', f'{target_yyyy + 1}')
+    if aoi is not None:
+        alos_collection = alos_collection.filterBounds(aoi)
+    return alos_collection.mean()
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+def sentinel2(asset) -> ee.Image:
+    return ee.Image(asset).select('B.*')
+
+
+def data_cube(asset: str, aoi: ee.Geometry):
+    dc = ee.ImageCollection(asset).filterBounds(aoi)
+    # parse the data cube images into 3 seperate images, spring, summer, fall
+    return funcs.data_cube_images
+
     
-    def __post_init__(self, ee_image, rectangle):
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+def aafc(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
+    instance = ee.ImageCollection("AAFC/ACI").filterDate(target_yyyy, (target_yyyy + 1))
+    if aoi is None:
+        return instance.filterBounds(aoi).first()
+    else:
+        return instance.first()
 
-        for sfilt, selector in self.s_filter.items():
-            smoothed = sfilt(ee_image)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+def nasa_dem() -> ee.Image:
+    return ee.Image("NASA/NASADEM_HGT/001").select('elevation')
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+def s2_inputs(assets: list[str]) -> List[ee.Image]:
+    # optcial inputs 
+    s2s = [sentinel2(_) for _ in assets]
+    ndvis = driv.batch_create_ndvi(s2s)
+    savis = driv.batch_create_savi(s2s)
+    tassels = driv.batch_create_tassel_cap(s2s)
+
+    return [*s2s, *ndvis, *savis, *tassels]
+
+
+def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
+    # prep the inputs
+    s1s = [sentinel1(_) for _ in assets]
+    # sar inputs
+    s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
+    sar_pp1 = [s_filter(_) for _ in s1s]
+    # sar derivatives
+    ratios = driv.batch_create_ratio(
+        images=sar_pp1,
+        numerator='VV',
+        denominator='VH'
+    )
+    return [*sar_pp1, *ratios]
+
+
+def elevation_inputs(rectangle: ee.Geometry = None, image: ee.Image = None, s_filter: Dict[Callable, List[Union[str, int]]] = None):
+    image = nasa_dem() if image is None else image
+    def terrain_analysis():
+        if s_filter is None:
+            s_filter = {
+                sfilters.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
+                sfilters.perona_malik(): ['HorizontalCurvature', 'VerticalCurvature', 'MeanCurvature']
+            }
+        
+        out = []
+        for filter, selector in s_filter.items():
+            smoothed = filter(image)
             ta = tagee.terrainAnalysis(smoothed, rectangle).select(selector)
-            self.products.append(ta)
+            out.append(ta)
             ta, smoothed = None, None
-
-
-@dataclass
-class Additional:
-    products: list [ee.Image] = field(default_factory=list)
+        return out
     
-    def __len__(self):
-        return len(self.products)
+    if rectangle is None:
+        s_filter = sfilters.gaussian_filter(3)
+        smoothed = s_filter(image)
+        slope = ee.Terrain.slope(smoothed)
+        return [smoothed, slope]
+    else:
+        return terrain_analysis()
+            
+
+def data_cube_inputs(collection: ee.ImageCollection) -> List[ee.Image]:
+    band_prefix = {"spring": "a_spri_b.*", "summer": 'b_summ_b.*', "fall": "c_fall_b.*"}
     
-    def __setitem__(self, _idx, _object):
-        self.products[_idx] = _object
+    old, new = bands.DataCube.bands()
+    col = collection.select(old, new)
     
-    def __getitem__(self, key):
-        return self.products[key]
+    s2_sr = bands.S2SR.bands()[0]
+    band_idx = [idx for idx, _ in enumerate(s2_sr)]
+    spring_col = col.select(band_prefix.get("spring")).select(band_idx, s2_sr)
+    summer_col =  col.select(band_prefix.get('summer')).select(band_idx, s2_sr)
+    fall_col = col.select(band_prefix.get('fall')).select(band_idx, s2_sr)    
 
+    s2s = [spring_col.mosaic(), summer_col.mosaic(), fall_col.mosaic()]
 
-def stack(optical_inputs: OpticalInputs, sar_inputs: SARInputs = None, dem_inputs: DEMInputs = None):
-    return ee.Image.cat(*optical_inputs.products, *sar_inputs.products, *dem_inputs.products)
+    ndvis = driv.batch_create_ndvi(s2s)
+    savis = driv.batch_create_savi(s2s)
+    tassels = driv.batch_create_tassel_cap(s2s)
 
+    return [*s2s, *ndvis, *savis, *tassels]
