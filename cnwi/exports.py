@@ -29,6 +29,8 @@ class CloudTasks(ABC):
         self.task: ee.batch.Task = None
         self.que.que.append(self.task)
 
+    def start(self):
+        self.task.start()
 
 
 @dataclass
