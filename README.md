@@ -43,10 +43,10 @@ def main():
     )
     
     # create s1 inputs
-    s1s = inputs.s1_inputs(williston.s1)
+    s1s: List[ee.Image] = inputs.s1_inputs(williston.s1)
     
     # create s2 inputs
-    s2s = inputs.s2_inputs(williston.s2)
+    s2s: List[ee.Image] = inputs.s2_inputs(williston.s2)
     
     # create elevation inputs
     elevation = inputs.nasa_dem()
