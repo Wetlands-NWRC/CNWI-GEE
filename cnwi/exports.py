@@ -15,6 +15,25 @@ class eeTaskQue:
     def start_tasks(self):
         [_.task.start() for _ in self.que]
 
+class eeCloudTask:
+    pass
+
+    def create_task(self) -> ee.batch.Task:
+        pass
+        
+
+class CloudImageTask(eeCloudTask):
+    def __init__(self, image, description, bucket, fileNamePrefix, dimensions, region, scale, crs,
+                 maxPixels, shardSize, fileDimensions, fileFormat, formatOptions) -> None:
+        super().__init__()
+        self.image = image
+        self.description
+        self.bucket
+        self.fileNamePrefix = fileNamePrefix
+    
+    def create_task(self) -> ee.batch.Task:
+        return ee.batch.Export.image.toCloudStorage(**self.__dict__())
+
 
 @dataclass
 class CloudTasks(ABC):
@@ -24,8 +43,9 @@ class CloudTasks(ABC):
     filename_prefix: str = field(default=None)
     file_format: str = field(default=None)
     que: eeTaskQue = field(default_factory=eeTaskQue)
-    
+        
     def __post_init__(self):
+        
         self.task: ee.batch.Task = None
         self.que.que.append(self.task)
 

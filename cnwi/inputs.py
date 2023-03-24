@@ -10,22 +10,15 @@ from . import derivatives as driv
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def sentinel1(asset):
+def sentinel1V(asset):
     """
-    DV = VV + VH
-    DH = HH + HV
-    SV = VV
-    SH = HH
+    Constructs an ee.Image that represents a Dual Pol VV + VH image
     """
-    image = ee.Image(asset)
-    if 'DV' in asset or 'SV' in asset:
-        image = image.select('V.*')
-    elif 'DH' in asset or 'SH' in asset:
-        image = image.select('H.*')
-    else:
-        raise TypeError("Not at Valid Sentinel 1 Asset - id")
-    return image
+    return ee.Image(asset).select("V.*")
 
+def sentinel1H(asset):
+    return ee.Image(asset).select("H.*")
+    
 
 def alos(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
     alos_collection = ee.ImageCollection("").filterDate(f'{target_yyyy}', f'{target_yyyy + 1}')
@@ -60,7 +53,6 @@ def nasa_dem() -> ee.Image:
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
 def s2_inputs(assets: list[str]) -> List[ee.Image]:
     # optcial inputs 
     s2s = [sentinel2(_) for _ in assets]
@@ -73,7 +65,7 @@ def s2_inputs(assets: list[str]) -> List[ee.Image]:
 
 def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
     # prep the inputs
-    s1s = [sentinel1(_) for _ in assets]
+    s1s = [sentinel1DV(_) for _ in assets]
     # sar inputs
     s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
     sar_pp1 = [s_filter(_) for _ in s1s]
@@ -88,7 +80,7 @@ def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
 
 def elevation_inputs(rectangle: ee.Geometry = None, image: ee.Image = None, s_filter: Dict[Callable, List[Union[str, int]]] = None):
     image = nasa_dem() if image is None else image
-    def terrain_analysis():
+    def terrain_analysis(s_filter):
         if s_filter is None:
             s_filter = {
                 sfilters.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
@@ -109,7 +101,7 @@ def elevation_inputs(rectangle: ee.Geometry = None, image: ee.Image = None, s_fi
         slope = ee.Terrain.slope(smoothed)
         return [smoothed, slope]
     else:
-        return terrain_analysis()
+        return terrain_analysis(s_filter=s_filter)
             
 
 def data_cube_inputs(collection: ee.ImageCollection) -> List[ee.Image]:
