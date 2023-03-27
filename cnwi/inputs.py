@@ -88,7 +88,7 @@ def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
 
 def elevation_inputs(rectangle: ee.Geometry = None, image: ee.Image = None, s_filter: Dict[Callable, List[Union[str, int]]] = None):
     image = nasa_dem() if image is None else image
-    def terrain_analysis():
+    def terrain_analysis(s_filter):
         if s_filter is None:
             s_filter = {
                 sfilters.gaussian_filter(3): ['Elevation', 'Slope', 'GaussianCurvature'],
@@ -109,7 +109,7 @@ def elevation_inputs(rectangle: ee.Geometry = None, image: ee.Image = None, s_fi
         slope = ee.Terrain.slope(smoothed)
         return [smoothed, slope]
     else:
-        return terrain_analysis()
+        return terrain_analysis(s_filter=s_filter)
             
 
 def data_cube_inputs(collection: ee.ImageCollection) -> List[ee.Image]:
