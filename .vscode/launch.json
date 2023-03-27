@@ -20,10 +20,10 @@
             "justMyCode": true
         },
         {
-            "name": "Python: Datasets.Williston",
+            "name": "Python: col",
             "type": "python",
             "request": "launch",
-            "module": "cnwi.datasets.williston",
+            "module": "cnwi.col",
             "justMyCode": true
         },
         {
