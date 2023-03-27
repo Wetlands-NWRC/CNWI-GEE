@@ -37,3 +37,45 @@ class WillistonDataCube:
         "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015553_20180913T015613_012690_0176B4_EB44"
     ])
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Pre - built Image Collections
+#TODO add asset strings to each class
+class _PreBuiltImageCollection(ee.ImageCollection):
+    ARGS: str 
+    
+    def __init__(self):
+        super().__init__(self.ARGS)
+
+
+class ALOS(_PreBuiltImageCollection):
+    pass
+
+
+class Sentinel1(_PreBuiltImageCollection):
+    pass
+
+
+class Sentinel2SR(_PreBuiltImageCollection):
+    pass
+
+
+class Sentinel2TOA(_PreBuiltImageCollection):
+    pass
+
+
+class AAFC(_PreBuiltImageCollection):
+    pass
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Pre Built Images
+class _PreBuiltImage(ee.Image):
+    ARGS: str
+    
+    def __init__(self):
+        super().__init__(self.ARGS, None)
+
+
+class NASA_DEM(ee.Image):
+    ARGS = "NASA/NASADEM_HGT/001"
+
