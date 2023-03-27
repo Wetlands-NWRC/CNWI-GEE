@@ -5,12 +5,6 @@ import ee
 
 ee.Initialize()
 
-class ImageFactory(ABC):
-    args: Any
-
-    def get_image(self) -> ee.Image():
-        pass
-
 
 class Sentinel1V(ImageFactory):
     def get_image(self) -> ee.Image():
@@ -19,8 +13,9 @@ class Sentinel1V(ImageFactory):
 
 
 class Sentinel2(ImageFactory):
-    def get_image(self) -> ee.Image():
-        return self.select('B.*')
+    def get_image(self, qa_bands: bool = False) -> ee.Image():
+        img = ee.Image(self.args)
+        return img if not qa_bands else img.select("B.*")
 
 
 class Dem(ImageFactory):
@@ -28,10 +23,38 @@ class Dem(ImageFactory):
         return ee.Image(self.args).select('elevation')
 
 
-class DataCubeImage(ImageFactory):        
-    def get_image(self) -> ee.Image():
+class DataCubeImage(ImageFactory):
+    def _parse_dc_collection(self):
+        """"""
+        pass
+      
+    def get_image(self) -> List[ee.Image()]:
         pass        
 
+class Phase(ImageFactory):
+    """USed to create a phase images.
+
+    Args:
+        ImageFactory (): _description_
+    """
+    def get_image(self) -> ee.Image():
+        return super().get_image()
+
+
+class Alos(ImageFactory):
+    def get_image(self, year: int, aoi: ee.Geometry):
+        """_summary_
+
+        Args:
+            year (int): _description_
+            aoi (ee.Geometry): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return self.arg
+
+Alos().get_image()
 
 class ImageCollectionFactory(ee.ImageCollection):
     _ARGS: str = None

@@ -24,7 +24,7 @@ def alos(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
     alos_collection = ee.ImageCollection("").filterDate(f'{target_yyyy}', f'{target_yyyy + 1}')
     if aoi is not None:
         alos_collection = alos_collection.filterBounds(aoi)
-    return alos_collection.mean()
+    return alos_collection.mean().select('H.*')
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -50,6 +50,8 @@ def aafc(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 def nasa_dem() -> ee.Image:
     return ee.Image("NASA/NASADEM_HGT/001").select('elevation')
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
