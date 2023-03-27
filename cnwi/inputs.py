@@ -67,7 +67,7 @@ def s2_inputs(assets: list[str]) -> List[ee.Image]:
 
 def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
     # prep the inputs
-    s1s = [sentinel1DV(_) for _ in assets]
+    s1s = [sentinel1V(_) for _ in assets]
     # sar inputs
     s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
     sar_pp1 = [s_filter(_) for _ in s1s]
