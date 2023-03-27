@@ -33,6 +33,6 @@ class DataCube(ImageFactory):
 
 
 class ALOS(ImageFactory):
-    def get_image(self, aoi: ee.Geometry, target_yyyy: int = 2018) -> ee.Image:
+    def get_image(self, target_yyyy: int = 2018) -> ee.Image:
         date = f'{target_yyyy}', f'{target_yyyy + 1}'
         return self.args.filterDate(*date).first().select('H.*')

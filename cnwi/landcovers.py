@@ -1,45 +1,45 @@
 from __future__ import annotations
 
 import enum
-
-from abc import ABC
-from dataclasses import dataclass
 from typing import Type
-
 import pandas as pd
 
 
-@dataclass(frozen=True)
-class _LandCovers:
+class ColorPalette(enum.Enum):
+    """
+    Base class for creating a Color Palette the key is assumed to be the land cover class
+    and the value is assumed to be the hex code that represents the disired color of the land cover
+    classes
+    
+    Example 
+    -------
+    ```
+    class SubLandCovers(_LandCovers):
+        BOG = 'A52A2A'
+        FEN = 'FFF600'
+        FOREST = 'FF0000'
+        MARSH = '8FBC8F'
+        SHALLOW_WATER = '7CFC00'
+        SWAMP = '008000'
+        UPLAND = 'FF0001'
+        WATER = '0000FF'
+    ```
+    """
     pass
 
-
-@dataclass(frozen=True)  # this will always be the same
-class LandCovers(_LandCovers):
-    WETLAND: str = '008000'
-    NON_WETLAND: str = 'FF0000'
-    WATER: str = '0000FF'
-
-
-@dataclass(frozen=True)
-class SubLandCovers(_LandCovers):  # this needs to variable
-    BOG = 'A52A2A'
-    FEN = 'FFF600'
-    FOREST = 'FF0000'
-    MARSH = '8FBC8F'
-    SHALLOW_WATER = '7CFC00'
-    SWAMP = '008000'
-    UPLAND = 'FF0001'
-    WATER = '0000FF'
+    @classmethod
+    def color_pallet(cls):
+        return [f'#{_.name}' for _ in cls]
 
 
 class CMAP(pd.DataFrame):
-
-    def __init__(self, in_labels: list[str], land_cover: Type[_LandCovers]) -> None:
+    # TODO fix this tool
+    def __init__(self, color_pallet: ColorPalette) -> None:
+        self.color_pallet = color_pallet
         labels, value, r, g, b = [], [], [], [], []
-
-        for idx, label in enumerate(in_labels, start=1):
-            hex = getattr(land_cover, label.upper())
+        inputs = zip(self._get_labels, self._get_hex)
+        for idx, pkg in enumerate(inputs, start=1):
+            label, hex_c = None, None 
             rgb: tuple[int] = tuple(int(hex[i:i + 2], 16) for i in (0, 2, 4))
             r.append(rgb[0])
             g.append(rgb[1])
@@ -49,6 +49,13 @@ class CMAP(pd.DataFrame):
         data = {"value": value, "red": r, "green": g, "blue": b}
         super().__init__(pd.DataFrame(data=data, index=labels))
 
+    def _get_labels(self):
+        return [str(_.name) for _ in self.color_pallet]
+    
+    def _get_hex(self):
+        return [_.value for _ in self.color_pallet]
+    
+
     def to_clr(self, filename: str):
         self.to_csv(
             path_or_buf=filename,
@@ -56,12 +63,3 @@ class CMAP(pd.DataFrame):
             header=False,
             index=False
         )
-
-
-def palette(lcobj: Type[_LandCovers], labels: list[str] = None) -> list[str]:
-    hexs = [getattr(lcobj, label.upper(), None) for label in labels]
-
-    pallette = [
-        f'#{hex}' for hex in hexs if hex is not None
-    ]
-    return pallette
