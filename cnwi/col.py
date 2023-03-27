@@ -15,8 +15,3 @@ class _ImageCollection(ee.ImageCollection):
 
 class ALOSCollection(_ImageCollection):
     ARGS: str = "JAXA/ALOS/PALSAR/YEARLY/SAR_EPOCH"
-    def __init__(self):
-        """_summary_
-        """
-        super().__init__()
-
