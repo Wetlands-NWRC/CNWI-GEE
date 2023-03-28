@@ -48,23 +48,23 @@ class _PreBuiltImageCollection(ee.ImageCollection):
 
 
 class ALOS(_PreBuiltImageCollection):
-    pass
+    ARGS = "JAXA/ALOS/PALSAR-2/Level2_2/ScanSAR"
 
 
 class Sentinel1(_PreBuiltImageCollection):
-    pass
+    ARGS = "COPERNICUS/S1_GRD"
 
 
 class Sentinel2SR(_PreBuiltImageCollection):
-    pass
+    ARGS = "COPERNICUS/S2_SR"
 
 
 class Sentinel2TOA(_PreBuiltImageCollection):
-    pass
+    ARGS = "COPERNICUS/S2_HARMONIZED"
 
 
 class AAFC(_PreBuiltImageCollection):
-    pass
+    ARGS = "AAFC/ACI"
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -76,6 +76,6 @@ class _PreBuiltImage(ee.Image):
         super().__init__(self.ARGS, None)
 
 
-class NASA_DEM(ee.Image):
+class NASA_DEM(_PreBuiltImage):
     ARGS = "NASA/NASADEM_HGT/001"
 
