@@ -5,7 +5,7 @@ from typing import Dict, List, Callable, Union
 import ee
 import tagee
 
-from . import sfilters, funcs, bands
+from . import sfilters, funcs, bands, imgs
 from . import derivatives as driv
 
 
@@ -55,9 +55,9 @@ def nasa_dem() -> ee.Image:
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def s2_inputs(assets: list[str]) -> List[ee.Image]:
+def s2_inputs(assets: list[imgs.Sentinel2]) -> List[ee.Image]:
     # optcial inputs 
-    s2s = [sentinel2(_) for _ in assets]
+    s2s = [_.get_image() for _ in assets]
     ndvis = driv.batch_create_ndvi(s2s)
     savis = driv.batch_create_savi(s2s)
     tassels = driv.batch_create_tassel_cap(s2s)
@@ -65,9 +65,9 @@ def s2_inputs(assets: list[str]) -> List[ee.Image]:
     return [*s2s, *ndvis, *savis, *tassels]
 
 
-def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
+def s1_inputs(assets: list[imgs.Sentinel1V], s_filter = None) ->List[ee.Image]:
     # prep the inputs
-    s1s = [sentinel1V(_) for _ in assets]
+    s1s = [_.get_image() for _ in assets]
     # sar inputs
     s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
     sar_pp1 = [s_filter(_) for _ in s1s]
