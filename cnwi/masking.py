@@ -1,3 +1,4 @@
+from abc import ABC
 import ee
 
 class Mask(ABC):
@@ -7,10 +8,19 @@ class Mask(ABC):
         pass
 
 
-class SlopeMask:    
+class SlopeMask(Mask):    
     def get_mask(self, deg: int = 15) -> ee.Image:
         """returns an image where everything less than or equal to the deg has been selects"""
-        return self.slope.lte(self.deg)
+        return self.product.lte(deg)
+
+
+class CropMask(Mask):
+    def get_mask(self) -> ee.Image:
+        """Creates a Crop mask"""
+        # TODO need to document crop values, and find a way to iterativly isolate the values to be 
+        # masked out
+        # Might need to create an expression that represents 
+        return super().get_mask()
 
 
 def update_mask(image: ee.Image, mask: Mask) -> ee.Image:
