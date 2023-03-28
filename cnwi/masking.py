@@ -2,7 +2,10 @@ from abc import ABC
 import ee
 
 class Mask(ABC):
-    product: ee.Image
+    def __init__(self, product: ee.Image) -> None:
+        self.product = product 
+        super().__init__()
+    
     
     def get_mask(self):
         pass
