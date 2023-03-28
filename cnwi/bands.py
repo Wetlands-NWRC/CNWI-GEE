@@ -111,8 +111,3 @@ class DataCube(_BANDS):
     B52 = 'c_fall_weight_y2_base'
     B53 = 'c_fall_weight_y2_swiradj'
 
-    @classmethod
-    def get_seasons(cls) -> dict:
-        spring_prefix = None
-        summer_prefix = None
-        fall_prefix = None
