@@ -18,7 +18,7 @@ class model:
         
         self.trend = self.harmonics.select([*self.independent, dependent_var]).\
             reduce(ee.Reducer.linearRegression(**{
-                'numX': len(self.config.independents),
+                'numX': len(self.independent),
                 'numY': 1
             }))
         
@@ -33,8 +33,7 @@ class Phase(ee.Image):
     def __init__(self, coeff: ee.Image, mode: int):
         super().__init__(self._calc(coeff, mode))
     
-    @staticmethod
-    def _calc(coeff, mode) -> ee.Image:
+    def _calc(self, coeff, mode) -> ee.Image:
         sin, cos, name = f'sin_{mode}_coeff', f'cos_{mode}_coeff', f'phase_{mode}'
         return coeff.select(sin).atan2(coeff.select(cos)).rename(name)
          
@@ -43,8 +42,7 @@ class Amplitude(ee.Image):
     def __init__(self, coeff: ee.Image, mode: int):
         super().__init__(self._calc(coeff, mode), None)
 
-    @staticmethod
-    def _calc(coeff, mode) -> ee.Image:
+    def _calc(self, coeff, mode) -> ee.Image:
         sin, cos, name = f'sin_{mode}_coeff', f'cos_{mode}_coeff', f'amp_{mode}'
         return coeff.select(sin).atan2(coeff.select(cos)).rename(name)
          
@@ -52,34 +50,26 @@ class Amplitude(ee.Image):
 class FourierImage(ee.Image):
     
     def __init__(self, model: model, ee_image_collection: ee.ImageCollection):
-        self.img_col = ee_image_collection
-        self.coeff = model.trend.select('coefficients')
+        self.input_collection = ee_image_collection
         self.model = model
         
         ##
         # Construction start here
-        with_coeff = self._add_bands_names(self.coeff, self.img_col)
+        coeff_bands = model.coefficients.select('.*coeff')
+        with_coeff = self.input_collection.map(lambda x: x.addBands(coeff_bands))
+        
         fitted = self._add_amps_phases(
-            modes=self.model.modes,
-            col=self.img_col,
-            coeff=self.coeff
+            model=self.model,
+            input_col=with_coeff
         )
         
-        # all bands that have coeff
-        coeff_bands: ee.List = fitted.select("*._coeff")
-        amp_bands = self._get_names("amp_")
-        phase_bands = self._get_names("phase_")
-        
-        # combine all lists to a single list
-        required_bands: ee.List = coeff_bands.cat(amp_bands).cat(phase_bands)
-        
-        super().__init__(fitted.select(required_bands).median().unitScale(-1, 1), None)
+        # reduce to median
+        stack = fitted.median().unitScale(-1, 1)
+        coeff_bands = stack.select(".*coeff")
+        amp_bands = stack.select('amp.*')
+        phase_bands = stack.select('phase.*')
 
-
-    def _add_bands_names(self, model, coeff, col):
-        expand = coeff.arrayFlatten([model.independent, ['coeff']])
-        prefixed = [f'{_}_coeff' for _ in model.independent]
-        return col.map(lambda x: x.addBands(expand.select(prefixed)))
+        super().__init__(ee.Image.cat(coeff_bands, amp_bands, phase_bands), None)
     
     def _add_phase(self, coeff, mode) -> Callable:
         def wrapper(image) -> Phase:
@@ -91,18 +81,17 @@ class FourierImage(ee.Image):
             return image.addBands(Amplitude(coeff, mode))
         return wrapper
     
-    def _add_amps_phases(self, modes: List[int], col: ee.ImageCollection, coeff: ee.Image):
+    def _add_amps_phases(self, model: model, input_col: ee.ImageCollection):
         """
         Creates Phase and Amplitude images for each mode defined in the model and adds them to
         to each image in the input collection
         """
-        for mode in modes:
-            col.map(self._add_amp(coeff, mode)).\
-                map(self._add_phase(coeff, mode))
-        return col
-        
-    def _get_names(self, base: str, modes: List[str]):
-        return ee.List(modes).map(lambda x: ee.String(base).cat(ee.Number(x).int()))
+        fitted = input_col
+        for mode in model.modes:
+            fitted = fitted.map(self._add_amp(model.coefficients, mode)).\
+                map(self._add_phase(model.coefficients, mode))
+        return fitted
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 def add_harmonics(freq: List[int], cos_names: List[str], sin_names: List[str]) -> Callable:    
     def add_harmonics_wrapper(element: ee.Image):
@@ -141,7 +130,7 @@ def fit(model: model) -> ee.ImageCollection:
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 def fourier(ee_object: ee.ImageCollection, modes: int = 5, omega: float = 1.5, nir: str = None, 
-            red: str = None) -> Tuple[fourierimage, ee.ImageCollection]:
+            red: str = None) -> FourierImage:
     """Applys fourier transform to defined image collection. Image Collection needs to be filtered 
     by start and end date, as well have a cloud mask applied. It also needs to have NDVI band in the 
     stack
@@ -166,16 +155,4 @@ def fourier(ee_object: ee.ImageCollection, modes: int = 5, omega: float = 1.5, n
         modes=modes,
         dependent_var="NDVI"
     )
-    
-    phase_img = phase(fourier_model)
-    amp_img = amplitude(fourier_model)
-    mean_dep = meanDepdendent(dependent_var="NDVI")
-    
-    fourier_image = fourierimage(
-        phase=phase_img,
-        amplitude=amp_img,
-        mean_dependant=mean_dep
-    )
-    
-    fitted = fit(fourier_model)
-    return fourier_image, fitted
+    return FourierImage(model=fourier_model, ee_image_collection=time_series)
