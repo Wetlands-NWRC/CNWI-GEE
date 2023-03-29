@@ -5,15 +5,13 @@ import ee
 
 class model:    
     def __init__(self, ee_object: ee.ImageCollection, modes: int = 5, dependent_var: str = None) -> None:
-        
-        frequencies = list(range(1, modes + 1))
-        
-        self.cos_names = [f'cos_{ _ }' for _ in frequencies]
-        self.sin_name = [f'sin_{ _ }' for _ in frequencies]
+        self.modes = list(range(1, modes + 1))
+        self.cos_names = [f'cos_{ _ }' for _ in self.modes]
+        self.sin_name = [f'sin_{ _ }' for _ in self.modes]
         self.independent = ['constant', 't', *self.sin_name, *self.cos_names]
         self.dependent = dependent_var
         self.harmonics = ee_object.map(add_harmonics(
-            freq=frequencies,
+            freq=self.modes,
             cos_names=self.cos_names,
             sin_names=self.sin_name
         ))
@@ -25,58 +23,86 @@ class model:
             }))
         
         self.coefficients: ee.Image = self.trend.select('coefficients').\
-            arrayProject([0]).\
-            arrayFlatten([self.independent])
+            arrayFlatten([self.independent, ["coeff"]])
 
         ee_object = None
 
 
 class Phase(ee.Image):
-    def _mk_phase_helper(self, band1, band2):
-            return self.model.coefficients.select(band1)\
-                .atan2(self.model.coefficients.select(band2)).unitScale(-math.pi, math.pi)
     
-    def __init__(self, model: model):
-        self.model = model
-        
-        image = ee.Image.cat(*[self._mk_phase_helper(x,y) for x,y in zip(model.sin_names, 
-                                                                 model.config.cos_names)])
-        
-        super().__init__(image.select(image.bandNames(), [f'phase_{idx}' for idx, _ in 
-                                                  enumerate(model.sin_names, start=1)]), None)
+    def __init__(self, coeff: ee.Image, mode: int):
+        super().__init__(self._calc(coeff, mode))
+    
+    @staticmethod
+    def _calc(coeff, mode) -> ee.Image:
+        sin, cos, name = f'sin_{mode}_coeff', f'cos_{mode}_coeff', f'phase_{mode}'
+        return coeff.select(sin).atan2(coeff.select(cos)).rename(name)
+         
 
+class Amplitude(ee.Image):
+    def __init__(self, coeff: ee.Image, mode: int):
+        super().__init__(self._calc(coeff, mode), None)
+
+    @staticmethod
+    def _calc(coeff, mode) -> ee.Image:
+        sin, cos, name = f'sin_{mode}_coeff', f'cos_{mode}_coeff', f'amp_{mode}'
+        return coeff.select(sin).atan2(coeff.select(cos)).rename(name)
+         
 
 class FourierImage(ee.Image):
+    
     def __init__(self, model: model, ee_image_collection: ee.ImageCollection):
+        self.img_col = ee_image_collection
+        self.coeff = model.trend.select('coefficients')
         self.model = model
-        coeff = model.trend.select('coefficients')
+        
+        ##
+        # Construction start here
+        with_coeff = self._add_bands_names(self.coeff, self.img_col)
+        fitted = self._add_amps_phases(
+            modes=self.model.modes,
+            col=self.img_col,
+            coeff=self.coeff
+        )
+        
+        # all bands that have coeff
+        coeff_bands: ee.List = fitted.select("*._coeff")
+        amp_bands = self._get_names("amp_")
+        phase_bands = self._get_names("phase_")
+        
+        # combine all lists to a single list
+        required_bands: ee.List = coeff_bands.cat(amp_bands).cat(phase_bands)
+        
+        super().__init__(fitted.select(required_bands).median().unitScale(-1, 1), None)
+
+
+    def _add_bands_names(self, model, coeff, col):
         expand = coeff.arrayFlatten([model.independent, ['coeff']])
         prefixed = [f'{_}_coeff' for _ in model.independent]
-        with_coeff = ee_image_collection.map(lambda x: x.addBands(expand.select(prefixed)))
-        super().__init__(None, None)
-
-    def _mk_bands(model: model):
-        pass
-
-    def _add_phase_amplitude(coeffiecent_image: ee.ImageCollection, modes):
-        pass
+        return col.map(lambda x: x.addBands(expand.select(prefixed)))
     
+    def _add_phase(self, coeff, mode) -> Callable:
+        def wrapper(image) -> Phase:
+            return image.addBands(Phase(coeff, mode))
+        return wrapper
     
+    def _add_amp(self, coeff, mode) -> Callable:
+        def wrapper(image) -> Amplitude:
+            return image.addBands(Amplitude(coeff, mode))
+        return wrapper
     
-
-class amplitude:
-    def __new__(cls, model: model) -> ee.Image:
-        def amplitude_helper(band1, band2) -> ee.Image:
-            return model.select(band1).hypot(model.coefficients.select(band2)).multiply(5)
+    def _add_amps_phases(self, modes: List[int], col: ee.ImageCollection, coeff: ee.Image):
+        """
+        Creates Phase and Amplitude images for each mode defined in the model and adds them to
+        to each image in the input collection
+        """
+        for mode in modes:
+            col.map(self._add_amp(coeff, mode)).\
+                map(self._add_phase(coeff, mode))
+        return col
         
-        stack = ee.Image.cat(*[amplitude_helper(x,y) for x,y in zip(model.sin_names, 
-                                                                    model.cos_names)])
-        
-        band_names: ee.List = stack.bandNames()
-        new_names = [f'amplitude_{idx}' for idx, _ in enumerate(model.sin_names, start=1)]
-        return stack.select(band_names, new_names)
-
-
+    def _get_names(self, base: str, modes: List[str]):
+        return ee.List(modes).map(lambda x: ee.String(base).cat(ee.Number(x).int()))
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 def add_harmonics(freq: List[int], cos_names: List[str], sin_names: List[str]) -> Callable:    
     def add_harmonics_wrapper(element: ee.Image):
