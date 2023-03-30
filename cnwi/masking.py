@@ -11,6 +11,11 @@ class Mask(ABC):
         pass
 
 
+class Mask(ee.Image):
+    def __init__(self, args=None, version=None):
+        super().__init__(args, version)
+
+
 class SlopeMask(Mask):
     def __init__(self, product: ee.Image, deg: int = 15) -> None:
         super().__init__(product)
