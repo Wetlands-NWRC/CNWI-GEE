@@ -17,9 +17,8 @@ class RandomForestModel:
         
     @property
     def classifier(self):
-        props = self.__dict__
-        mode = props.pop('mode')
-        return ee.Classifier.smileRandomForest(**props).setOutputMode(mode)
+        props = {k:v for k,v in self.__dict__.items() if k != 'mode'}
+        return ee.Classifier.smileRandomForest(**props).setOutputMode(self.mode)
 
     def show_properties(self) -> dict:
         return self.__dict__
