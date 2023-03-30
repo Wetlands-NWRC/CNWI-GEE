@@ -125,3 +125,24 @@ def data_cube_inputs(collection: ee.ImageCollection) -> List[ee.Image]:
     tassels = driv.batch_create_tassel_cap(s2s)
 
     return [*s2s, *ndvis, *savis, *tassels]
+
+
+class ImageStack(ee.Image):
+    def __init__(self, s1: List[ee.Image] = None, s2: List[ee.Image] = None, dem: list[ee.Image] = None,
+                 alos: ee.Image = None, fourier_transform: ee.Image = None):
+        self.s1 = s1
+        self.s2 = s2 
+        self.dem = dem
+        self.alos = alos
+        self.ft = fourier_transform
+        inputs = self.flatten([v for v in self.__dict__.values() if v is not None])
+        super().__init__(ee.Image.cat(*inputs), None)
+    
+    def flatten(self, list_of_lists):
+        if len(list_of_lists) == 0:
+            return list_of_lists
+        if isinstance(list_of_lists[0], list):
+            return self.flatten(list_of_lists[0]) + self.flatten(list_of_lists[1:])
+        return list_of_lists[:1] + self.flatten(list_of_lists[1:])
+
+# create the inputs
