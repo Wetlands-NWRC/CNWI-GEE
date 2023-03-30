@@ -15,8 +15,7 @@ class TrainingData(ee.FeatureCollection):
     @classmethod
     def show_sample_properties(cls) -> Dict[str, Any]:
         return cls.SAMPLE_PROPERTIES
-    
-    
+
     def __init__(self, collection: ee.FeatureCollection, label: str):
         """Constructs a training data table, standardizes inputs.
 
