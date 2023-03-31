@@ -56,8 +56,24 @@ def nasa_dem() -> ee.Image:
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 def s2_inputs(assets: list[imgs.Sentinel2]) -> List[ee.Image]:
+    if isinstance(assets, imgs.eeDataCube):
+        # get seasonal composites, cast to list
+        parsed_seasons = assets.get_seasonal_composites()
+        index = list(imgs.S2SR.BANDS.keys())
+        names = list(imgs.S2SR.BANDS.values())
+        s2s = [x.select(index, names) for x in parsed_seasons.values()]
+        
+    else:
+        obj = {
+            'S2_HARMONIZED': imgs.S2TOA,
+            'S2_SR_HARMONIZED': imgs.S2SR
+        }
+        s2s = []
+        for asset in assets:
+            idfer = asset.split("/")[1]
+            s2s.append(obj.get(idfer)(asset))
+    
     # optcial inputs 
-    s2s = [_.get_image() for _ in assets]
     ndvis = driv.batch_create_ndvi(s2s)
     savis = driv.batch_create_savi(s2s)
     tassels = driv.batch_create_tassel_cap(s2s)
@@ -65,19 +81,42 @@ def s2_inputs(assets: list[imgs.Sentinel2]) -> List[ee.Image]:
     return [*s2s, *ndvis, *savis, *tassels]
 
 
-def s1_inputs(assets: list[imgs.Sentinel1V], s_filter = None) ->List[ee.Image]:
-    # prep the inputs
-    s1s = [_.get_image() for _ in assets]
-    # sar inputs
-    s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
-    sar_pp1 = [s_filter(_) for _ in s1s]
-    # sar derivatives
-    ratios = driv.batch_create_ratio(
-        images=sar_pp1,
-        numerator='VV',
-        denominator='VH'
-    )
-    return [*sar_pp1, *ratios]
+def s1_inputs(assets: list[str], s_filter = None, mosaic: bool = False) ->List[ee.Image]:
+    """If mosaic is set to true will return a list containing one image and one ratio
+    if set to false will return a list continaing one image for every defined asset and one ration
+    for every constructed image
+    """
+    obj = {
+        'DV': imgs.S1DV,
+        'DH': imgs.S1DH
+    }
+    
+    spatial_filter = sfilters.boxcar(1) if s_filter is None else s_filter
+    
+    s1s = []
+    for asset in assets:
+        name = asset.split("/")[-1].split("_")[3][2:]
+        img = obj.get(name)
+        s1s.append(img(asset))
+    
+    #TODO make Sentinel 1 Image Collection
+    if mosaic:
+        mosaic = ee.ImageCollection(s1s).map(spatial_filter).mosaic()
+        ratio = driv.ratio(mosaic, 'VV', 'VH')
+        output = [mosaic, ratio]
+    else:
+        # sar inputs
+        s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
+        sar_pp1 = [s_filter(_) for _ in s1s]
+    
+        # sar derivatives
+        ratios = driv.batch_create_ratio(
+            images=sar_pp1,
+            numerator='VV',
+            denominator='VH'
+        )
+        output = [*sar_pp1, *ratios]
+    return output
 
 
 def elevation_inputs(rectangle: ee.Geometry = None, image: ee.Image = None, s_filter: Dict[Callable, List[Union[str, int]]] = None):
