@@ -142,35 +142,34 @@ class _S2(ee.Image):
 
 class S2SR(_S2):
     BANDS = {
-        0 : 'Aerosols',
-        1 : 'Blue',
-        2 : 'Green',
-        3 : 'Red',
-        4 : 'Red Edge 1',
-        5 : 'Red Edge 2',
-        6 : 'Red Edge 3',
-        7 : 'NIR',
-        8 : 'Red Edge 4',
-        9:  'SWIR 1',
-        10:  'SWIR 2',
+        0 : 'B1',
+        1 : 'B2',
+        2 : 'B3',
+        3 : 'B4',
+        4 : 'B5',
+        5 : 'B6',
+        6 : 'B7',
+        7 : 'B8',
+        8 : 'B8A',
+        9:  'B11',
+        10:  'B12',
     }
-    
- 
+
 class S2TOA(_S2):
     BANDS = {
-        0: 'Aerosols',
-        1: 'Blue',
-        2: 'Green',
-        3: 'Red',
-        4: 'Red Edge 1',
-        5: 'Red Edge 2',
-        6: 'Red Edge 3',
-        7: 'NIR',
-        8: 'Red Edge 4',
-        9: 'Water vapor',
-        10: 'Cirrus',
-        11: 'SWIR 1',
-        12: 'SWIR 2',
+        0: "B1",
+        1: "B2",
+        2: "B3",
+        3: "B4",
+        4: "B5",
+        5: "B6",
+        6: "B7",
+        7: "B8",
+        8: "B8A",
+        9: "B9",
+        10:"B10",
+        11:"B11",
+        12:"B12",
     }
 
 class _S1(ee.Image):
@@ -197,3 +196,4 @@ class S1DH(_S1):
         0: 'HH',
         1: 'HV',
     }
+
