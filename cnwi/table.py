@@ -1,9 +1,9 @@
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, List
 import ee
 
+from . import imgs
 
-class TrainingData(ee.FeatureCollection):
-
+class Sample(ee.FeatureCollection):
     SAMPLE_PROPERTIES = {
         'scale': 10,
         'projection': None,
@@ -15,6 +15,19 @@ class TrainingData(ee.FeatureCollection):
     @classmethod
     def show_sample_properties(cls) -> Dict[str, Any]:
         return cls.SAMPLE_PROPERTIES
+    
+    def __init__(self, stack: ee.Image, training_data: ee.FeatureCollection):
+        self.stack = stack
+        self.training_data = training_data
+        super().__init__(self._generate_samples(self.stack, self.training_data))
+        
+    def _generate_samples(self, stack, training_data):
+        return stack.sampleRegions(training_data, **self.SAMPLE_PROPERTIES)
+
+
+class TrainingData(ee.FeatureCollection):
+    
+    PROPERTIES = ['land_cover', 'value', 'POINT_X', 'POINT_Y']
 
     def __init__(self, collection: ee.FeatureCollection, label: str):
         """Constructs a training data table, standardizes inputs.
@@ -44,7 +57,7 @@ class TrainingData(ee.FeatureCollection):
                 'land_cover': ee.String(key).toLowerCase(),
                 'value': lookup.get(key) 
             })
-            return new.select(self.SAMPLE_PROPERTIES.get('properties'))
+            return new.select(self.PROPERTIES)
         return wrapper
     
     def _add_xy(self, element: ee.Feature):
@@ -54,7 +67,22 @@ class TrainingData(ee.FeatureCollection):
         return element.set({'POINT_X': x, 'POINT_Y': y})
     
     
-    def generate_samples(self, stack: ee.Image) -> None:
+    def generate_samples(self, stack: ee.Image) -> Sample:
         """Sets the sample attribute to the resulting feature collection form sample regions"""
-        self.samples = stack.sampleRegions(self, **self.SAMPLE_PROPERTIES)
-        return None
+        return Sample(stack, self)
+
+
+class Sentinel1(ee.ImageCollection):
+    pass
+
+
+class Sentinel1DV(ee.ImageCollection):
+    def __init__(self, args: List[imgs.S1DV] = None):
+        args = "Collection id" if args is None else args
+        super().__init__(args)
+
+    def moasic(self):
+        return imgs.S1DV(self.moasic())
+
+    def map(self, algo: Callable):
+        return self.map(algo)
