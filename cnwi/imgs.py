@@ -3,7 +3,6 @@ from typing import Union, Dict
 import ee
 
 
-
 class ALOS(ee.Image):
     def __init__(self, target_yyyy: int = 2018):
         instance = ee.ImageCollection("JAXA/ALOS/PALSAR/YEARLY/SAR_EPOCH")\
@@ -83,14 +82,15 @@ class eeDataCube(ee.Image):
     def show_band_prefix(cls):
         return cls.BAND_PREFIX
     
-    def _parse_dc_tiles(self, obj: ee.ImageCollection) -> ee.Image:
-        band_idx = list(self.BANDS.keys())
-        band_names = list(self.BANDS.values())
-        return obj.select(band_idx, band_names).mosaic()
 
     def __init__(self, dc_collection: ee.ImageCollection):
         """Extracts the seasonal composites from data cube images"""        
         super().__init__(self._parse_dc_tiles(dc_collection), None)
+    
+    def _parse_dc_tiles(self, obj: ee.ImageCollection) -> ee.Image:
+        band_idx = list(self.BANDS.keys())
+        band_names = list(self.BANDS.values())
+        return obj.select(band_idx, band_names).mosaic()
     
     def get_seasonal_composites(self) -> Dict[str, ee.Image]:
         """Returns a Dictonary where the keys are the season type i.e. spring, summer, fall, and the
