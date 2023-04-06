@@ -1,5 +1,5 @@
 import ee
-from cnwi import ft, prebuilt
+from cnwi import fourier, prebuilt
 
 
 def cloud_mask(element: ee.Image) -> ee.Image:
@@ -19,7 +19,7 @@ def main():
     s2_collection = prebuilt.Sentinel2SR().filterBounds(aoi).filterDate(f"{start_yyyy}", f"{end_yyyy}").\
         map(cloud_mask)
 
-    fourier_image = ft.fourier(
+    fourier_image = fourier.fourier(
         ee_object=s2_collection,
         omega=1
     )

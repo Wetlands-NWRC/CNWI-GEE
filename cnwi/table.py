@@ -41,7 +41,6 @@ class TrainingData(ee.FeatureCollection):
             label (str): the column that stores the label information you wish to train on. 
         """
         self.label = label
-        self.samples: ee.FeatureCollection = None
         self.labels = collection.aggregate_array(self.label).distinct().sort()
         self.values = ee.List.sequence(1, self.labels.size())
         self.lookup = ee.Dictionary.fromLists(self.labels, self.values)
@@ -72,17 +71,21 @@ class TrainingData(ee.FeatureCollection):
         return Sample(stack, self)
 
 
-class Sentinel1(ee.ImageCollection):
-    pass
-
-
 class Sentinel1DV(ee.ImageCollection):
     def __init__(self, args: List[imgs.S1DV] = None):
-        args = "Collection id" if args is None else args
+        args = "COPERNICUS/S1_GRD" if args is None else args
         super().__init__(args)
 
-    def moasic(self):
-        return imgs.S1DV(self.moasic())
+    def mosaic(self):
+        return imgs.S1DV(self.mosaic())
 
     def map(self, algo: Callable):
         return self.map(algo)
+
+
+class Sentinel2SR(ee.ImageCollection):
+    pass
+
+
+class Sentinel2TOA(ee.ImageCollection):
+    pass
