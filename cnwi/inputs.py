@@ -10,51 +10,6 @@ from . import derivatives as driv
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def sentinel1V(asset):
-    """
-    Constructs an ee.Image that represents a Dual Pol VV + VH image
-    """
-    return ee.Image(asset).select("V.*")
-
-def sentinel1H(asset):
-    return ee.Image(asset).select("H.*")
-    
-
-def alos(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
-    alos_collection = ee.ImageCollection("").filterDate(f'{target_yyyy}', f'{target_yyyy + 1}')
-    if aoi is not None:
-        alos_collection = alos_collection.filterBounds(aoi)
-    return alos_collection.mean().select('H.*')
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def sentinel2(asset) -> ee.Image:
-    return ee.Image(asset).select('B.*')
-
-
-def data_cube(asset: str, aoi: ee.Geometry):
-    dc = ee.ImageCollection(asset).filterBounds(aoi)
-    # parse the data cube images into 3 seperate images, spring, summer, fall
-    return funcs.data_cube_images
-
-    
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def aafc(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
-    instance = ee.ImageCollection("AAFC/ACI").filterDate(target_yyyy, (target_yyyy + 1))
-    if aoi is None:
-        return instance.filterBounds(aoi).first()
-    else:
-        return instance.first()
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def nasa_dem() -> ee.Image:
-    return ee.Image("NASA/NASADEM_HGT/001").select('elevation')
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 def s2_inputs(assets: list[imgs.Sentinel2]) -> List[ee.Image]:
     if isinstance(assets, imgs.eeDataCube):
         # get seasonal composites, cast to list
