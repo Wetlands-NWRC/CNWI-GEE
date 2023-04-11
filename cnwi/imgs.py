@@ -170,3 +170,7 @@ class S1DH(_S1):
         1: 'HV',
     }
 
+
+class NASA_DEM(ee.Image):
+    def __init__(self) -> None:
+        super().__init__(ee.Image("NASA/NASADEM_HGT/001").select('elevation'))
