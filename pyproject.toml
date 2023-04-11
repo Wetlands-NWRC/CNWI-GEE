@@ -19,14 +19,9 @@ classifiers = [
 
 dependencies = [
     "earthengine-api",
-    "geopandas",
-    "matplotlib",
     "numpy",
-    "fiona >= 1.8.19",
     "packaging",
     "pandas >= 1.1.0",
-    "pyproj >= 3.0.1",
-    "shapely >= 1.7.1",
     "tagee"
 ]
 
