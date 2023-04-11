@@ -5,65 +5,30 @@ from typing import Dict, List, Callable, Union
 import ee
 import tagee
 
-from . import sfilters, funcs, bands
+from . import sfilters, funcs, imgs
 from . import derivatives as driv
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def sentinel1(asset):
-    """
-    DV = VV + VH
-    DH = HH + HV
-    SV = VV
-    SH = HH
-    """
-    image = ee.Image(asset)
-    if 'DV' in asset or 'SV' in asset:
-        image = image.select('V.*')
-    elif 'DH' in asset or 'SH' in asset:
-        image = image.select('H.*')
+def s2_inputs(assets: list[imgs.Sentinel2]) -> List[ee.Image]:
+    if isinstance(assets, imgs.eeDataCube):
+        # get seasonal composites, cast to list
+        parsed_seasons = assets.get_seasonal_composites()
+        index = list(imgs.S2SR.BANDS.keys())
+        names = list(imgs.S2SR.BANDS.values())
+        s2s = [x.select(index, names) for x in parsed_seasons.values()]
+        
     else:
-        raise TypeError("Not at Valid Sentinel 1 Asset - id")
-    return image
-
-
-def alos(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
-    alos_collection = ee.ImageCollection("").filterDate(f'{target_yyyy}', f'{target_yyyy + 1}')
-    if aoi is not None:
-        alos_collection = alos_collection.filterBounds(aoi)
-    return alos_collection.mean()
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def sentinel2(asset) -> ee.Image:
-    return ee.Image(asset).select('B.*')
-
-
-def data_cube(asset: str, aoi: ee.Geometry):
-    dc = ee.ImageCollection(asset).filterBounds(aoi)
-    # parse the data cube images into 3 seperate images, spring, summer, fall
-    return funcs.data_cube_images
-
+        obj = {
+            'S2_HARMONIZED': imgs.S2TOA,
+            'S2_SR_HARMONIZED': imgs.S2SR
+        }
+        s2s = []
+        for asset in assets:
+            idfer = asset.split("/")[1]
+            s2s.append(obj.get(idfer)(asset))
     
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def aafc(target_yyyy: int = 2018, aoi: ee.Geometry = None) -> ee.Image:
-    instance = ee.ImageCollection("AAFC/ACI").filterDate(target_yyyy, (target_yyyy + 1))
-    if aoi is None:
-        return instance.filterBounds(aoi).first()
-    else:
-        return instance.first()
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def nasa_dem() -> ee.Image:
-    return ee.Image("NASA/NASADEM_HGT/001").select('elevation')
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-def s2_inputs(assets: list[str]) -> List[ee.Image]:
     # optcial inputs 
-    s2s = [sentinel2(_) for _ in assets]
     ndvis = driv.batch_create_ndvi(s2s)
     savis = driv.batch_create_savi(s2s)
     tassels = driv.batch_create_tassel_cap(s2s)
@@ -71,23 +36,46 @@ def s2_inputs(assets: list[str]) -> List[ee.Image]:
     return [*s2s, *ndvis, *savis, *tassels]
 
 
-def s1_inputs(assets: list[str], s_filter = None) ->List[ee.Image]:
-    # prep the inputs
-    s1s = [sentinel1(_) for _ in assets]
-    # sar inputs
-    s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
-    sar_pp1 = [s_filter(_) for _ in s1s]
-    # sar derivatives
-    ratios = driv.batch_create_ratio(
-        images=sar_pp1,
-        numerator='VV',
-        denominator='VH'
-    )
-    return [*sar_pp1, *ratios]
+def s1_inputs(assets: list[str], s_filter = None, mosaic: bool = False) ->List[ee.Image]:
+    """If mosaic is set to true will return a list containing one image and one ratio
+    if set to false will return a list continaing one image for every defined asset and one ration
+    for every constructed image
+    """
+    obj = {
+        'DV': imgs.S1DV,
+        'DH': imgs.S1DH
+    }
+    
+    spatial_filter = sfilters.boxcar(1) if s_filter is None else s_filter
+    
+    s1s = []
+    for asset in assets:
+        name = asset.split("/")[-1].split("_")[3][2:]
+        img = obj.get(name)
+        s1s.append(img(asset))
+    
+    #TODO make Sentinel 1 Image Collection
+    if mosaic:
+        mosaic = ee.ImageCollection(s1s).map(spatial_filter).mosaic()
+        ratio = driv.ratio(mosaic, 'VV', 'VH')
+        output = [mosaic, ratio]
+    else:
+        # sar inputs
+        s_filter = sfilters.boxcar(1) if s_filter is None else s_filter
+        sar_pp1 = [s_filter(_) for _ in s1s]
+    
+        # sar derivatives
+        ratios = driv.batch_create_ratio(
+            images=sar_pp1,
+            numerator='VV',
+            denominator='VH'
+        )
+        output = [*sar_pp1, *ratios]
+    return output
 
 
 def elevation_inputs(rectangle: ee.Geometry = None, image: ee.Image = None, s_filter: Dict[Callable, List[Union[str, int]]] = None):
-    image = nasa_dem() if image is None else image
+    image = imgs.NASA_DEM() if image is None else image
     def terrain_analysis(s_filter):
         if s_filter is None:
             s_filter = {
@@ -131,3 +119,24 @@ def data_cube_inputs(collection: ee.ImageCollection) -> List[ee.Image]:
     tassels = driv.batch_create_tassel_cap(s2s)
 
     return [*s2s, *ndvis, *savis, *tassels]
+
+
+class ImageStack(ee.Image):
+    def __init__(self, s1: List[ee.Image] = None, s2: List[ee.Image] = None, dem: list[ee.Image] = None,
+                 alos: ee.Image = None, fourier_transform: ee.Image = None):
+        self.s1 = s1
+        self.s2 = s2 
+        self.dem = dem
+        self.alos = alos
+        self.ft = fourier_transform
+        inputs = self.flatten([v for v in self.__dict__.values() if v is not None])
+        super().__init__(ee.Image.cat(*inputs), None)
+    
+    def flatten(self, list_of_lists):
+        if len(list_of_lists) == 0:
+            return list_of_lists
+        if isinstance(list_of_lists[0], list):
+            return self.flatten(list_of_lists[0]) + self.flatten(list_of_lists[1:])
+        return list_of_lists[:1] + self.flatten(list_of_lists[1:])
+
+# create the inputs
