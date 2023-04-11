@@ -1,6 +1,3 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
-setup(
-    name='cnwi-gee',
-    packages=find_packages(where='cnwi')
-)
+setup()
