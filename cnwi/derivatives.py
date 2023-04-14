@@ -68,6 +68,17 @@ def tassel_cap(image: ee.Image, blue: str = None, red: str = None,
     return components_image
 
 
+class NDVI:
+    def __init__(self, NIR: str, RED: str):
+        self.nir = NIR
+        self.red = RED
+    
+    def __call__(cls, *args, **kwargs):
+        return super().__call__(*args, **kwargs)
+    
+    def get_image(image) -> ee.Image:
+        pass
+
 def batch_create_ndvi(images: List[ee.Image], nir: str = None, red: str = None) -> List[ee.Image]:
     return [ndvi(img, nir=nir, red=red) for img in images]
 
