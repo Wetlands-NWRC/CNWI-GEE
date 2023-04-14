@@ -112,3 +112,11 @@ def terrain_analysis(dem: ee.Image, bbox: ee.Geometry) -> ee.Image:
     bands = ['Elevation', 'Slope', 'Horizontal curvature', 'Vertical curvature', 'Mean curvature', 'Gaussian curvature']
     return tagee.terrainAnalysis(dem, bbox).select(bands)
 
+class TerrainAnalysis:
+    def __init__(self, dem, aoi, filter_mapping: dict = None) -> None:
+        self.dem = dem
+        self.aoi = aoi
+        self.filter_mapping = filter_mapping
+    
+    def run(self) -> ee.Image:
+        pass
