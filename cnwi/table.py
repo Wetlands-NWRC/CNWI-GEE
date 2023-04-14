@@ -89,3 +89,9 @@ class Sentinel2SR(ee.ImageCollection):
 
 class Sentinel2TOA(ee.ImageCollection):
     pass
+
+
+class Sentinel1(ee.ImageCollection):
+    def __init__(self):
+        """Creates a base sentinel 1 image collection"""
+        super().__init__("COPERNICUS/S1_GRD")
