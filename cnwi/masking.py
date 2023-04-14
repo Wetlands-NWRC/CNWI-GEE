@@ -46,3 +46,11 @@ class CropMask(Mask):
 
 def update_mask(image: ee.Image, mask: Mask) -> ee.Image:
     return image.updateMask(mask.get_mask())
+
+
+class S2CloudMask:
+    def __call__(self, image: ee.Image) -> ee.Image:
+        return self._mask(image)
+    
+    def _mask(self, image: ee.Image) -> ee.Image:
+        pass
