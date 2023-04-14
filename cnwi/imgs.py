@@ -184,6 +184,7 @@ class S2Cloudless(ee.Image):
     BUFFER = 100
     
     def __init__(self, aoi, start_date, end_date):
+        """ Adapted from here: https://developers.google.com/earth-engine/tutorials/community/sentinel-2-s2cloudless"""
         s2_sr_cld_col = self.get_s2_sr_cld_col(aoi, start_date, end_date)
         s2_sr_median = (s2_sr_cld_col.map(self._add_cld_shdw_mask)
                              .map(self._apply_cld_shdw_mask)
