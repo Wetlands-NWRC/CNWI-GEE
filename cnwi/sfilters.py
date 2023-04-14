@@ -81,3 +81,15 @@ def perona_malik(K=3.5, iterations=10, method=2) -> Callable:
 
         return img
     return wrapper
+
+##
+class BoxCar:
+    def __init__(self, radius: float, units: str = None, normalize: bool = True, magnitude: float = 1.0) -> None:
+        self.radius = radius
+        self.units = 'pixels' if units is None else units
+        self.normalize = normalize
+        self.magnitude = magnitude
+    
+    def __call__(self, image: ee.Image) -> ee.Image:
+        filter = ee.Kernel.square(**self.__dict__)
+        return image.convolve(filter)
