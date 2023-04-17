@@ -189,7 +189,7 @@ class S2Cloudless(ee.Image):
         s2_sr_median = (s2_sr_cld_col.map(self._add_cld_shdw_mask)
                              .map(self._apply_cld_shdw_mask)
                              .median())
-        super().__init__(s2_sr_cld_col, None)
+        super().__init__(s2_sr_median, None)
     
     def _get_s2_sr_cld_col(self, aoi, start_date, end_date):
         # Import and filter S2 SR.
