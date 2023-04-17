@@ -45,7 +45,7 @@ class TrainingData(ee.FeatureCollection):
         self.values = ee.List.sequence(1, self.labels.size())
         self.lookup = ee.Dictionary.fromLists(self.labels, self.values)
         
-        cons = collection.map(self._add_xy).map(self._standardize(self.label, self.lookup))
+        cons = collection.map(self._add_xy).map(self._standardize(self.label, self.lookup)).randomColumn(seed=423)
         super().__init__(cons, None)
     
     # define protected helper functions
@@ -71,27 +71,14 @@ class TrainingData(ee.FeatureCollection):
         return Sample(stack, self)
 
 
-class Sentinel1DV(ee.ImageCollection):
-    def __init__(self, args: List[imgs.S1DV] = None):
-        args = "COPERNICUS/S1_GRD" if args is None else args
-        super().__init__(args)
+class PartitionData:
+    SPLIT = 0.7
 
-    def mosaic(self):
-        return imgs.S1DV(self.mosaic())
+    def __init__(self, col: TrainingData) -> None:
+        self.col = col
 
-    def map(self, algo: Callable):
-        return self.map(algo)
-
-
-class Sentinel2SR(ee.ImageCollection):
-    pass
-
-
-class Sentinel2TOA(ee.ImageCollection):
-    pass
-
-
-class Sentinel1(ee.ImageCollection):
-    def __init__(self):
-        """Creates a base sentinel 1 image collection"""
-        super().__init__("COPERNICUS/S1_GRD")
+    def training_set(self) -> ee.FeatureCollection:
+        return self.col.filter(f"random < {self.SPLIT}")
+    
+    def validation_set(self) -> ee.FeatureCollection:
+        return self.col.filter(f"random > {self.SPLIT}")
