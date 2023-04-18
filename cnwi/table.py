@@ -74,11 +74,10 @@ class TrainingData(ee.FeatureCollection):
 class PartitionData:
     SPLIT = 0.7
 
-    def __init__(self, col: TrainingData) -> None:
-        self.col = col
+    def __init__(self, col: ee.FeatureCollection) -> None:
+        self.col = col.randomColumn(seed=435)
+        self.training = TrainingData(self.col.filter(f"random < {self.SPLIT}"))
+        self.validation = TrainingData(self.col.filter(f"random > {self.SPLIT}"))
 
-    def training_set(self) -> ee.FeatureCollection:
-        return self.col.filter(f"random < {self.SPLIT}")
-    
-    def validation_set(self) -> ee.FeatureCollection:
-        return self.col.filter(f"random > {self.SPLIT}")
+    def get_partitioned(self) -> tuple[TrainingData]:
+        return self.training, self.validation
