@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from typing import Union, Dict, Any
 
@@ -11,7 +9,7 @@ from . import table
 
 class eeValidator: 
     
-    def __init__(self, val_sample: Union[table.Sample, ee.FeatureCollection], model: "ee.Classifier", 
+    def __init__(self, val_sample: Union[table.Sample, ee.FeatureCollection], model: Any, 
                  class_prop: str = None, label_col: str =None) -> None:
         """A tool for doing independent validation in Google Earth Engine
         
@@ -51,7 +49,7 @@ class eeValidator:
         self.consumers = ee.Feature(None, {'consumers': self._cfm.consumersAccuracy().toList()\
             .flatten().slice(1)})
     # Helper functions
-    def _get_confusion_matrix(self, val_sample, model, class_prop) -> "ee.ConfusionMatrix":
+    def _get_confusion_matrix(self, val_sample, model, class_prop) -> Any:
         """ helper function to extract the confusion matrix """
         validated = val_sample.classify(model)    
         return validated.errorMatrix(class_prop, 'classification')
