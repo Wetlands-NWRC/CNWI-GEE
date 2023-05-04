@@ -105,22 +105,21 @@ def ratio(image, numerator: str, denominator: str) -> ee.Image:
 def batch_create_ratio(images: List[ee.Image], numerator: str, denominator: str) -> List[ee.Image]:
     return [ratio(img, numerator, denominator) for img in images]
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-class RasterCalculator(ABC):
+class _RasterCalculator:
     NAME = None
     
-    @abstractmethod
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        return super().__call__(*args, **kwds)
+    def __call__(self, image: ee.Image) -> Any:
+        results = self._calculation(image)
+        return image.addBands(results)
     
-    @abstractmethod
     def _calculation(self, image: ee.Image):
         pass
     
-    def add2image(self, image: ee.Image):
-        pass
+    def calculate(self, image: ee.Image):
+        return image.addBands(self._calculation)
 
 
-class NDVI(RasterCalculator):
+class NDVI(_RasterCalculator):
     
     NAME = 'NDVI'
     
@@ -128,16 +127,12 @@ class NDVI(RasterCalculator):
         super().__init__()
         self.nir = 'B8' if nir is None else nir
         self.red = 'B4' if red is None else red
-    
-    def __call__(self, image: ee.Image) -> Any:
-        results = self._calculation(image)
-        return image.addBands(results)
-    
+ 
     def _calculation(self, image) -> ee.Image:
         return image.normalizedDifference([self.nir, self.red]).rename(self.NAME)
 
 
-class SAVI(RasterCalculator):
+class SAVI(_RasterCalculator):
     
     NAME = 'SAVI'
     
@@ -146,10 +141,6 @@ class SAVI(RasterCalculator):
         self.nir = 'B8' if nir is None else nir
         self.red = 'B4' if red is None else red
         self.coef = coef
-    
-    def __call__(self, image: ee.Image) -> Any:
-        results = self._calculation(image)
-        return image.addBands(results)
     
     def _calculation(self, image: ee.Image):
         # select bands
@@ -168,7 +159,7 @@ class SAVI(RasterCalculator):
         return savi.rename(self.NAME)
 
 
-class TasselCap(RasterCalculator):
+class TasselCap(_RasterCalculator):
     
     NAME = ['Brightness', 'Greenness', 'Wetness']
     
@@ -181,10 +172,6 @@ class TasselCap(RasterCalculator):
         self.nir = 'B8' if nir is None else nir
         self.swir_1 = 'B11'if swir_1 is None else swir_1
         self.swir_2 = 'B12'if swir_2 is None else swir_2
-
-    def __call__(self, image: ee.Image) -> Any:
-        results = self._calculation(image)
-        return image.addBands(results)
 
     def _calculation(self, image: ee.Image):
         image = image.select([
@@ -214,4 +201,22 @@ class TasselCap(RasterCalculator):
 
         return components_image        
 
+
+class Ratio(_RasterCalculator):
+    def __init__(self, numerator: str, denominator: str) -> None:
+        super().__init__()
+        self.numer = numerator
+        self.denom = denominator
     
+    def _calculation(self, image: ee.Image):
+        exp = "x / y"
+        opt_map = {
+            'x': image.select(self.numer),
+            'y': image.select(self.denom)
+        }
+
+        derv = image.expression(
+            expression=exp,
+            opt_map=opt_map
+        )   
+        return derv.rename(f'Ratio_{self.numer}_{self.denom}')
