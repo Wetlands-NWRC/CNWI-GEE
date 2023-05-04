@@ -116,7 +116,7 @@ class _RasterCalculator:
         pass
     
     def calculate(self, image: ee.Image):
-        return image.addBands(self._calculation)
+        return image.addBands(self._calculation(image))
 
 
 class NDVI(_RasterCalculator):
