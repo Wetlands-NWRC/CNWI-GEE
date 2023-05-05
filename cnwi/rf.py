@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List
 import ee
 
+
 class RandomForestModel:
         
     def __init__(self, numberOfTrees: int = 1000, variablesPerSplit: int = None,  minLeafPopulation: int = 1,
@@ -39,3 +40,4 @@ class RandomForestModel:
             classProperty=classProperty,
             inputProperties=predictors
         )    
+
