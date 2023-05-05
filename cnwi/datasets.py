@@ -3,10 +3,10 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class NovaScotia:
-    data_cube = "projects/fpca-336015/assets/NovaScotia/data_cube"
-    terrain_analysis = "projects/fpca-336015/assets/NovaScotia/terrain_analysis"
-    fourier_transform = None
-    sentienl1 = field(default_factory=[
+    data_cube: str = "projects/fpca-336015/assets/NovaScotia/data_cube"
+    terrain_analysis: str = "projects/fpca-336015/assets/NovaScotia/terrain_analysis"
+    fourier_transform: str = None
+    sentienl1: list = field(default_factory= lambda: [
         'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20190512T221810_20190512T221835_016217_01E855_91EE',
         'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20190909T221817_20190909T221842_017967_021D39_72CF',
         'COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20190512T221835_20190512T221859_016217_01E855_62FF',
