@@ -3,7 +3,7 @@ import ee
 from . import derivatives as d
 
 
-def prep_data_cube(col: ee.ImageCollection, aoi: ee.FeatureCollection):
+def prep_data_cube(col: ee.ImageCollection):
     """ Handles building data cube collection that can be used downstream """
     # Standardize band names to S2 
     s2_names = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
