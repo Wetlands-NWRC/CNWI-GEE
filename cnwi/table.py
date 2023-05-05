@@ -69,15 +69,3 @@ class TrainingData(ee.FeatureCollection):
     def generate_samples(self, stack: ee.Image) -> Sample:
         """Sets the sample attribute to the resulting feature collection form sample regions"""
         return Sample(stack, self)
-
-
-class PartitionData:
-    SPLIT = 0.7
-
-    def __init__(self, col: ee.FeatureCollection, label: str) -> None:
-        self.col = col.randomColumn(seed=435)
-        self.training = TrainingData(self.col.filter(f"random < {self.SPLIT}"), label=label)
-        self.validation = TrainingData(self.col.filter(f"random > {self.SPLIT}"), label=label)
-
-    def get_partitioned(self) -> tuple[TrainingData]:
-        return self.training, self.validation

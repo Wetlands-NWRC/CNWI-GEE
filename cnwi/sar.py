@@ -4,9 +4,23 @@ from . import derivatives as d
 from . import sfilters as s
 
 
+class Sentinel1(ee.ImageCollection):
+    ARGS = ""
+    
+    def __init__(self):
+        """ Constructs a Image Collection that Represents a collecton of Sentinel 1 Images """
+        super().__init__(self.ARGS)    
+
+
+class ALOS(ee.ImageCollection):
+    ARGS = "JAXA/ALOS/PALSAR/YEARLY/SAR_EPOCH"
+
+    def __init__(self):
+        super().__init__(self.ARGS)
+
+
 def build_alos_inpts(target_yyyy: int) -> ee.Image:
-    mosaic: ee.Image = ee.ImageCollection("JAXA/ALOS/PALSAR/YEARLY/SAR_EPOCH").\
-        filterDate(f'{target_yyyy}', f'{target_yyyy + 1}').select('H.*').first()
+    mosaic: ee.Image = ALOS.filterDate(f'{target_yyyy}', f'{target_yyyy + 1}').select('H.*').first()
     
     ratio = d.Ratio(
         numerator='HH',
