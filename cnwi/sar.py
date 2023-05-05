@@ -20,7 +20,7 @@ class ALOS(ee.ImageCollection):
 
 
 def build_alos_inpts(target_yyyy: int) -> ee.Image:
-    mosaic: ee.Image = ALOS.filterDate(f'{target_yyyy}', f'{target_yyyy + 1}').select('H.*').first()
+    mosaic: ee.Image = ALOS().filterDate(f'{target_yyyy}', f'{target_yyyy + 1}').select('H.*').first()
     
     ratio = d.Ratio(
         numerator='HH',
@@ -32,8 +32,8 @@ def build_alos_inpts(target_yyyy: int) -> ee.Image:
 
 
 def build_s1_inputs(col: ee.ImageCollection) -> ee.Image:
-    EARLY_SEASON = '04-01', '06-20'
-    LATE_SEASON = '06-21', '10-31'
+    EARLY_SEASON = '2019-04-01', '2019-06-20'
+    LATE_SEASON = '2019-06-21', '2019-10-31'
     
     # select only VV and VH
     in_col = col.select('V.*')
@@ -50,4 +50,4 @@ def build_s1_inputs(col: ee.ImageCollection) -> ee.Image:
     early_mosaic = early.mosaic()
     late_mosaic = late.mosaic()
     # concat early and late into one image
-    return ee.Image.concat(early_mosaic, late_mosaic)
+    return ee.Image.cat(early_mosaic, late_mosaic)
