@@ -1,3 +1,5 @@
+import csv
+import json
 from typing import Tuple, List
 import ee
 
@@ -65,3 +67,31 @@ def partition_training(col: ee.FeatureCollection, partition: float) -> Tuple[ee.
     training = col.filter(f'random <= {partition}')
     validation = col.filter(f'random > {partition}')
     return training, validation
+
+
+def fc_from_file(filename: str) -> ee.FeatureCollection:
+    def _read_csv(filename) -> List[ee.Feature]:
+        with open(filename) as csvfile:
+            reader = csv.DictReader(csvfile)
+            features = [ee.Feature(None, row) for row in reader]
+        return features
+    
+    def _read_geojson(filename) -> List[ee.Feature]:
+        with open(filename) as f:
+            data = json.load(f)
+        
+        return [ee.Feature(None, _['properties']) for _ in data['features']]
+    
+    codecs = {
+        'csv': _read_csv,
+        'geojson': _read_geojson
+    }
+    
+    ext = filename.split(".")[-1]
+    
+    writer = codecs.get(ext, None)
+    
+    if writer is None:
+        raise ValueError("File Not supported")
+    
+    return ee.FeatureCollection(writer)
