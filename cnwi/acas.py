@@ -1,91 +1,49 @@
 import json
-from typing import Union, Dict, Any
+from typing import Dict, Any, List
 
 import ee
 import pandas as pd
 
-from . import table
+
+def _generate_metrics(cfm, order, labels) -> List[ee.Feature]:
+    fcfm = ee.Feature(None, {'confusion_matrix': cfm.array().slice(0,1).slice(1,1)})
+    order = ee.Feature(None, {"order": order})
+    overall = ee.Feature(None, {'overall': cfm.accuracy()})
+    producers = ee.Feature(None, {'producers': cfm.producersAccuracy().toList()\
+        .flatten().slice(1)})
+    consumers = ee.Feature(None, {'consumers': cfm.consumersAccuracy().toList()\
+        .flatten().slice(1)})
+    labels = ee.Feature(None, {"labels": labels})
+    return [fcfm, order, overall, producers, consumers, labels]
 
 
-class eeValidator: 
+def _get_labels(order, samples, class_prop, labels) -> ee.List:
+    """ extracts the values for the class property that represents the class string """
+    def mapper(element):
+        filter = ee.Filter.eq(class_prop, element)
+        return samples.filter(filter).aggregate_array(labels).distinct()
+    return ee.List(order).map(mapper).flatten()
+
+
+def out_of_bag(confusion_matrix, label: str):
+    raise NotImplementedError
+
+
+def independent(sample: ee.FeatureCollection, model, class_property: str, label: str) -> ee.FeatureCollection:   
+    """ helper function to extract the confusion matrix """
+    validated = sample.classify(model)    
+    cfm = validated.errorMatrix(class_property, 'classification')
     
-    def __init__(self, val_sample: Union[table.Sample, ee.FeatureCollection], model: Any, 
-                 class_prop: str = None, label_col: str =None) -> None:
-        """A tool for doing independent validation in Google Earth Engine
-        
-        The tool extracts: 
-        - confusion Matrix
-        - order of the labels
-        - the labels i.e. bog, fen etc...
-        - overall accuracy
-        - producers accuracy
-        - consumers accuracy
-        
-        Args:
-            val_sample (Union[table.Sample, ee.FeatureCollection]): the sample used for independent Validation
-            model (ee.Classifier): the ee Classifier you wish to validate
-            class_prop (str, optional): The name of the property containing the class integer. 
-                Each feature must have this property. Defaults to value.
-            label_col (str, optional): The name of the property containing the class string.
-                Each feature must have this property. Defaults to land_cover.
-        """        
-
-        self.label_col = 'land_cover' if label_col is None else label_col
-        self.class_prop = 'value' if class_prop is None else class_prop
-        
-        self._cfm = self._get_confusion_matrix(
-            val_sample=val_sample,
-            model=model,
-            class_prop=self.class_prop
-        )
-        
-        self.cfm = ee.Feature(None, {'confusion_matrix': self._cfm.array().slice(0,1).slice(1,1)})
-        self.order = ee.Feature(None, {"order": self._cfm.order().slice(1)})
-        self.labels = ee.Feature(None, {"labels": self._get_labels(val_sample, self.class_prop, 
-                                                                  self.label_col)})
-        self.overall = ee.Feature(None, {'overall': self._cfm.accuracy()})
-        self.producers = ee.Feature(None, {'producers': self._cfm.producersAccuracy().toList()\
-            .flatten().slice(1)})
-        self.consumers = ee.Feature(None, {'consumers': self._cfm.consumersAccuracy().toList()\
-            .flatten().slice(1)})
-    # Helper functions
-    def _get_confusion_matrix(self, val_sample, model, class_prop) -> Any:
-        """ helper function to extract the confusion matrix """
-        validated = val_sample.classify(model)    
-        return validated.errorMatrix(class_prop, 'classification')
+    order = cfm.order().slice(1)
+    labels = _get_labels(
+        order=order,
+        samples=sample,
+        class_prop=class_property,
+        labels=label
+    )
     
-    def _get_labels(self, samples, class_prop, labels) -> ee.List:
-        """ extracts the values for the class property that represents the class string """
-        def mapper(element):
-            filter = ee.Filter.eq(class_prop, element)
-            return samples.filter(filter).aggregate_array(labels).distinct()
-        return ee.List(self.order.get('order')).map(mapper).flatten()
-
-    def as_collection(self) -> ee.FeatureCollection:
-        """Containerizes:
-            - confusion Matrix
-            - order of the labels
-            - the labels i.e. bog, fen etc...
-            - overall accuracy
-            - producers accuracy
-            - consumers accuracy
-
-        is meant to be used for when you'd like to export to external storage i.e. drive or
-        cloud storage 
-        
-        Returns:
-            ee.FeatureCollection: the containerized metrics
-        """        
-        return ee.FeatureCollection([self.cfm, self.order, self.labels, self.overall,
-                                     self.producers, self.consumers])
-
-
-class eeConfusionMatrix(pd.DataFrame):
-    def __init__(self, ee_confusion_max, labels: list) -> None:
-        """ Constucts a Pandas Dataframe that represents  a confusion matrix from a 
-        ee.ConfusionMatrix"""
-        data = ee_confusion_max.array().slice(0,1).slice(1,1)
-        super().__init__(data=data, index=labels, columns=labels)
+    metrics = _generate_metrics(cfm, order=order, labels=labels)
+    return ee.FeatureCollection(metrics)
 
 
 class FormatMetrics:
@@ -130,42 +88,46 @@ class FormatMetrics:
         pass
 
 
-class _DFMetics(pd.DataFrame):
-    
-    def _get_features(self, data: Dict[str, Any]):
-        feature = data['features']
-        props = [_.get('properties') for _ in feature]
-        self.data = {k: v for _ in props for k,v in _.items()}
+def _get_features(data: Dict[str, Any]):
+    feature = data['features']
+    props = [_.get('properties') for _ in feature]
+    return {k: v for _ in props for k,v in _.items()}
 
 
-class ConfusionMatrix(_DFMetics):
+class ConfusionMatrix(pd.DataFrame):
     def __init__(self, data: Dict[str, Any]) -> None:
-        self._get_features(data)
-        df = pd.DataFrame(
-            data=self.data.get('confusion_matrix'),
-            columns=self.data.get('labels'),
-            index=self.data.get('labels')
-        )
-        super().__init__(df)
+        feats = _get_features(data)
+        data=feats.get('confusion_matrix')
+        columns=feats.get('labels')
+        index=feats.get('labels')
+        super().__init__(data=data, columns=columns, index=index)
 
 
-class Consumers(_DFMetics):
+class Consumers(pd.DataFrame):
     def __init__(self, data: Dict[str, Any]) -> None:
-        self._get_features(data)
-        df = pd.DataFrame(
-            data=[self.data.get('consumers')],
-            columns=self.data.get('labels'),
-            index=['consumers']
-        )
-        super().__init__(df)
+        feats = _get_features(data)
+        data=[feats.get('consumers')],
+        columns=feats.get('labels'),
+        index=['consumers']
+        super().__init__(data=data, columns=columns, index=index)
 
 
-class Producers(_DFMetics):
+class Producers(pd.DataFrame):
     def __init__(self, data: Dict[str, Any]) -> None:
-        self._get_features(data)
-        df = pd.DataFrame(
-            data=[self.data.get('producers')],
-            columns=self.data.get('labels'),
-            index=['producers']
-        )
-        super().__init__(df)
+        feats =_get_features(data)
+        data=[feats.get('producers')],
+        columns=feats.get('labels'),
+        index=['producers']
+        super().__init__(data=data, columns=columns, index=index)
+
+
+class Overall(pd.DataFrame):
+    def __init__(self, data) -> None:
+        feats = _get_features(data)
+        data=[feats.get('overall')]
+        columns=['Overall']
+        super().__init__(data=data, columns=columns)
+
+
+def build_metirc_tables(data: Dict[Any, Any], filename: str, dir: str = None, file_name_prefix: str = None):
+    pass

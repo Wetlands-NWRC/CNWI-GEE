@@ -28,9 +28,10 @@ def prep_training_data(col: ee.FeatureCollection, class_property: str = None) ->
     if class_property is not None:
         classes = col.aggregate_array(class_property).distinct().sort()
         values = ee.List.sequence(1, classes.size())
-        col = col.remap(classes, values)
+        lookup = ee.Dictionary.fromLists(classes, values)
+        col = col.map(lambda x: x.set('value', lookup.get(x.get(class_property))))
     # add randomColumn
-    return col.map(_insert_xy).randomColumn(seed=4324)
+    return col.map(_insert_xy)
 
 
 def generate_samples(col: ee.FeatureCollection, stack: ee.Image, scale: int = 10, 
@@ -60,7 +61,7 @@ def partition_training(col: ee.FeatureCollection, partition: float) -> Tuple[ee.
     Returns:
         Tuple[ee.FeatureCollection]: training, validation
     """    
-    
+    col = col.randomColumn()
     training = col.filter(f'random <= {partition}')
     validation = col.filter(f'random > {partition}')
     return training, validation
