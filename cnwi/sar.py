@@ -57,3 +57,4 @@ def build_s1_inputs(col: ee.ImageCollection) -> ee.Image:
     late_mosaic = late.mosaic()
     # concat early and late into one image
     return ee.Image.cat(early_mosaic, late_mosaic)
+
