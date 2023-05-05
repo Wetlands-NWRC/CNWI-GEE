@@ -5,11 +5,17 @@ from . import sfilters as s
 
 
 class Sentinel1(ee.ImageCollection):
-    ARGS = ""
+    ARGS = "COPERNICUS/S1_GRD"
     
     def __init__(self):
         """ Constructs a Image Collection that Represents a collecton of Sentinel 1 Images """
-        super().__init__(self.ARGS)    
+        super().__init__(self.ARGS)
+    
+    def get_s1dv_collection(self, aoi: ee.Geometry, date: tuple[str]) -> ee.ImageCollection:
+        return self.filterBounds(aoi).filterDate(*date)\
+            .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))\
+            .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))\
+            .filter(ee.Filter.eq('instrumentMode', 'IW'))
 
 
 class ALOS(ee.ImageCollection):
