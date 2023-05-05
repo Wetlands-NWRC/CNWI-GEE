@@ -5,6 +5,7 @@ import tagee
 
 from . import sfilters as s
 
+
 class NASA_DEM(ee.Image):
     
     ARGS = "NASA/NASADEM_HGT/001"
