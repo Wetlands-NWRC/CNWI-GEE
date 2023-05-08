@@ -2,6 +2,8 @@ import math
 from typing import List, Callable, Tuple
 import ee
 
+from . import derivatives as d
+
 
 class model:    
     def __init__(self, ee_object: ee.ImageCollection, modes: int = 5, dependent_var: str = None) -> None:
@@ -10,7 +12,7 @@ class model:
         self.sin_name = [f'sin_{ _ }' for _ in self.modes]
         self.independent = ['constant', 't', *self.sin_name, *self.cos_names]
         self.dependent = dependent_var
-        self.harmonics = ee_object.map(add_harmonics(
+        self.harmonics = ee_object.map(self._add_harmonics(
             freq=self.modes,
             cos_names=self.cos_names,
             sin_names=self.sin_name
@@ -26,6 +28,15 @@ class model:
             arrayFlatten([self.independent, ["coeff"]])
 
         ee_object = None
+    
+    def _add_harmonics(freq: List[int], cos_names: List[str], sin_names: List[str]) -> Callable:    
+        def add_harmonics_wrapper(element: ee.Image):
+            frequencies = ee.Image.constant(freq)
+            time = ee.Image(element).select('t')
+            cosines = time.multiply(frequencies).cos().rename(cos_names)
+            sines = time.multiply(frequencies).sin().rename(sin_names)
+            return element.addBands(cosines).addBands(sines)
+        return add_harmonics_wrapper
 
 
 class Phase(ee.Image):
@@ -49,27 +60,28 @@ class Amplitude(ee.Image):
 
 class FourierImage(ee.Image):
     
-    def __init__(self, model: model, ee_image_collection: ee.ImageCollection):
-        self.input_collection = ee_image_collection
-        self.model = model
-        
-        ##
-        # Construction start here
-        coeff_bands = model.coefficients.select('.*coeff')
-        with_coeff = self.input_collection.map(lambda x: x.addBands(coeff_bands))
-        
-        fitted = self._add_amps_phases(
-            model=self.model,
-            input_col=with_coeff
-        )
-        
+    def __init__(self, transformation: ee.ImageCollection):
+       
         # reduce to median
-        stack = fitted.median().unitScale(-1, 1)
+        stack = transformation.median().unitScale(-1, 1)
         coeff_bands = stack.select(".*coeff")
         amp_bands = stack.select('amp.*')
         phase_bands = stack.select('phase.*')
 
         super().__init__(ee.Image.cat(coeff_bands, amp_bands, phase_bands), None)
+
+
+class FourierTransform:
+    def __init__(self, model: model, col: ee.ImageCollection) -> None:        
+        # select coeff
+        coeff = model.coefficients.select('.*coeff')
+        # add coeff to each band in the collection
+        self.w_coeff = col.map(lambda x: x.addBands(coeff))
+        
+        self.fit = self._add_amps_phases(
+            model=model,
+            input_col=col
+        )
     
     def _add_phase(self, coeff, mode) -> Callable:
         def wrapper(image) -> Phase:
@@ -92,15 +104,16 @@ class FourierImage(ee.Image):
                 map(self._add_phase(model.coefficients, mode))
         return fitted
 
+    def get_fourier_image(self, aoi: ee.Geometry = None) -> FourierImage:
+        incol = self.fit.filterBounds(aoi) if aoi is not None else self.fit
+        return FourierImage(incol)
+
+    def get_collection(self, aoi: ee.Geometry = None):
+        outcol = self.fit.map(lambda _: _.unitScale(-1, 1))
+        return outcol.filterBounds(aoi) if aoi is not None else outcol
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def add_harmonics(freq: List[int], cos_names: List[str], sin_names: List[str]) -> Callable:    
-    def add_harmonics_wrapper(element: ee.Image):
-        frequencies = ee.Image.constant(freq)
-        time = ee.Image(element).select('t')
-        cosines = time.multiply(frequencies).cos().rename(cos_names)
-        sines = time.multiply(frequencies).sin().rename(sin_names)
-        return element.addBands(cosines).addBands(sines)
-    return add_harmonics_wrapper
+
 
 
 def add_ndvi(nir: str, red: str) -> Callable:
@@ -156,3 +169,45 @@ def fourier(ee_object: ee.ImageCollection, modes: int = 5, omega: float = 1.5, n
         dependent_var="NDVI"
     )
     return FourierImage(model=fourier_model, ee_image_collection=time_series)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ # 
+def build_fourier_inputs(target_aoi: ee.Geometry, time_range: Tuple[str] = None, modes: int = 3,
+                         omega: float = 1.0, variable: d._RasterCalculator = None) -> ee.Image:
+    """ Does Fourier Transform on Sentinel - 2 image Collection for the defined target area """
+    
+    def mask_clouds(element: ee.Image):
+        qa = element.select('QA60')
+        cloudBitMask = 1 << 10
+        cirrusBitMask = 1 << 11
+        mask = qa.bitwiseAnd(cloudBitMask).eq(0)\
+            .And(qa.bitwiseAnd(cirrusBitMask).eq(0))
+        return element.updateMask(mask)
+    
+    # Set default paramaters
+    DATES = (2017, 2022) if time_range is None else time_range
+    OMEAG = None # TODO check time range if > 365 set 1.0
+    VAR = d.NDVI() if variable is None else variable
+    
+    s2SR = ee.ImageCollection("COPERNICUS/S2_SR").filterBounds(target_aoi)\
+        .filterDate(*DATES).filter('CLOUDY_PIXEL_PERCENTAGE < 20').map(mask_clouds)\
+        .map(VAR)\
+        .map(add_constant)\
+        .map(add_time(omega=omega))\
+        .select(VAR.NAME)
+        
+    # build harmonics model
+    h_model = model(
+        ee_object=s2SR,
+        modes=modes,
+        omega=omega,
+        dependent_var=VAR.NAME
+    )
+    
+    trans = FourierTransform(
+        model=h_model,
+        col=s2SR
+    )
+    
+    return trans.get_fourier_image(aoi=target_aoi)
+    
+    
