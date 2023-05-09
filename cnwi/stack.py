@@ -12,5 +12,5 @@ class ImageStack(ee.Image):
         if isinstance(model, rf.RandomForestModel):
             pass
         else:
-            clfd = self.classifiy(model)
+            clfd = self.classifiy(model).unit8()
         return clfd
