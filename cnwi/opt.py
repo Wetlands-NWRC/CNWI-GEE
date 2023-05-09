@@ -1,5 +1,15 @@
 import ee
 
+
+
+class Sentinel2SR(ee.ImageCollection):
+    ARGS = 'COPERNICUS/S2_SR'
+    
+    def __init__(self):
+        super().__init__(self.ARGS)
+
+
+
 class S2Cloudless(ee.Image):
     CLOUD_FILTER = 60
     CLD_PRB_THRESH = 40
