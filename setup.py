@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='cnwi_gee',
-    version='4.0.0',
+    version='4.0.1',
     install_requires =[
         'earthengine-api',
         'pandas',
