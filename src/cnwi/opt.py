@@ -1,13 +1,11 @@
 import ee
 
 
-
 class Sentinel2SR(ee.ImageCollection):
     ARGS = 'COPERNICUS/S2_SR'
     
     def __init__(self):
         super().__init__(self.ARGS)
-
 
 
 class S2Cloudless(ee.Image):
@@ -106,3 +104,11 @@ class S2Cloudless(ee.Image):
 
         # Subset reflectance bands and update their masks, return the result.
         return img.select('B.*').updateMask(not_cld_shdw)
+
+
+class DataCubeComposite(ee.ImageCollection):
+    BANDS = None
+    PREFIX = None
+    
+    def __init__(self, args):
+        super().__init__(args)
