@@ -1,7 +1,12 @@
+import os
+
 from itertools import combinations
+from typing import Dict, Any, Union, List
 
 import pandas as pd
 import numpy as np
+
+from matplotlib import pyplot as plt
 
 
 class MOATable(pd.DataFrame):
@@ -51,3 +56,39 @@ def moa_calc(dfin: pd.DataFrame, label: str) -> MOATable:
     moa_table = moa_table[['labels', 'rank', 'band', 'scores']]
     return MOATable(moa_table)
 
+def plot_moa_dis(moa_scores: MOATable, samples: pd.DataFrame, rank: int = 1, dir: str = None) -> None:
+    # TODO need to update this to iterate over all predictors. 
+    dir = './plotting' if dir is None else dir
+    
+    def hist_factory(series: pd.Series, title: str, bin: Union[str, int] = None):
+        bin = 'auto' if bin is None else bin
+        
+        n, bins, patches = plt.hist(series, bin, rwidth=0.85)
+
+        plt.xlabel('Value')
+        plt.ylabel('Frequency')
+        plt.title(title)
+
+        maxfreq = n.max()
+        plt.ylim(ymax=np.ceil(maxfreq / 100) * 100 if maxfreq % 100 
+                else maxfreq + 100)
+        
+        plt.grid(True)
+        return n, bins, patches
+
+    for band in predictors:
+        series = self._samples[band]
+        
+        hist_factory(
+            series=series,
+            title=band,
+            bin=100
+        )
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        plotname = os.path.join(dir, f'{band}.png')
+        
+        plt.savefig(plotname)
+        plt.close()
+    return None
