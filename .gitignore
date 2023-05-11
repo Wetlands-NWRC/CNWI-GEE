@@ -132,12 +132,7 @@ dmypy.json
 *.clr
 dev/results/phase01/
 dev/results/phase02/
-<<<<<<< HEAD
-dev/results/phase03/benchmark/
-dev/results/phase03/datacube/
-scractch_output/
-=======
 dev/results/phase0*/benchmark/
 dev/results/phase0*/datacube/
 *.qgz
->>>>>>> main
+.vscode/
