@@ -50,3 +50,4 @@ def moa_calc(dfin: pd.DataFrame, label: str) -> MOATable:
     moa_table = pd.concat(dfs, axis=0, ignore_index=True)
     moa_table = moa_table[['labels', 'rank', 'band', 'scores']]
     return MOATable(moa_table)
+
