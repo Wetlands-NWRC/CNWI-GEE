@@ -64,5 +64,13 @@ def test_build_stack() -> None:
     print(stack.bandNames().getInfo())
     return None
 
+
+def test_build_s1_inputs():
+    s1_dv = eecnwi.build_sentinel1(
+        aoi=AOI
+    )
+    print(s1_dv.bandNames().getInfo())
+
+
 if __name__ == '__main__':
-    test_build_stack()
+    test_build_s1_inputs()
