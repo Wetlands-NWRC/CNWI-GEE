@@ -163,3 +163,7 @@ def train_random_forest_model(model: rf.RandomForestModel, training_data, predic
 # classify_stack
 def classify_stack(trained_model, stack: ee.Image) -> ee.Image:
     return stack.classify(trained_model).uint8()
+
+
+def do_accuracy_assessment() -> ee.FeatureCollection:
+    pass

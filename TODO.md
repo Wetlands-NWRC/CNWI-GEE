@@ -5,3 +5,4 @@
 4) move fourier transform generation to external tool
 5) Move terrain analysis to seperate tool
 6) prep training data tool to work on client  
+7) top level helper functions (Done)
