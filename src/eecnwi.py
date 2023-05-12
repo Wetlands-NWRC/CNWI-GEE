@@ -1,5 +1,7 @@
+from typing import List, Union
+
 import ee
-from cnwi import opt, sar
+from cnwi import opt, rf, sar, trainingd
 from cnwi import derivatives as d
 from cnwi import sfilters as s
 
@@ -131,9 +133,33 @@ def build_stack(*images) -> ee.Image:
     return ee.Image.cat(*images)
 
 
-# need training
+def training_data_set(stack: ee.Image, table: ee.FeatureCollection, label_col: str) -> ee.FeatureCollection:
+    # prep the input training points
+    preped = trainingd.prep_training_data(
+        col=table,
+        class_property=label_col
+    )
+    
+    samples = trainingd.generate_samples(
+        stack=stack,
+        col=preped
+    )
+    
+    return samples
+
 
 # build_rf_model
+def build_random_forest_model(number_of_trees: int = 1000) -> rf.RandomForestModel:
+    # TODO look into putting constraints on how the model can grow
+    return rf.RandomForestModel(
+        numberOfTrees=number_of_trees
+    )
+
+
+def train_random_forest_model(model: rf.RandomForestModel, training_data, predictors: Union[List[str], ee.List], classProperty: str):
+    return model.train()
+
 
 # classify_stack
-
+def classify_stack(trained_model, stack: ee.Image) -> ee.Image:
+    return stack.classify(trained_model).uint8()
