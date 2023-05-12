@@ -1,6 +1,7 @@
 import ee
-from cnwi import opt
+from cnwi import opt, sar
 from cnwi import derivatives as d
+from cnwi import sfilters as s
 
 
 def build_data_cube(arg: str, aoi: ee.Geometry) -> ee.Image:
@@ -90,18 +91,40 @@ def build_sentinel1(col: ee.ImageCollection):
     return ee.Image.cat(early_mosaic, late_mosaic)
 
 
-def build_alos() -> ee.Image:
-    pass
+def build_alos(target_year: int = 2019) -> ee.Image:
+    # build alos mosaic
+    mosaic: ee.Image = sar.ALOS().filterDate(f'{target_year}', f'{target_year + 1}')\
+        .select('H.*').first()
+    
+    # Create a Ratio Calc obj
+    ratio = d.Ratio(
+        numerator='HH',
+        denominator='HV'
+    )
+    
+    # add the ratio band to the mosaic
+    with_ratio = ratio.calculate(mosaic)
+    return with_ratio
 
 
 def build_elevation(arg: str, aoi: ee.Geometry = None) -> ee.Image:
     """ pre computed dataset """
-    pass
+    col = ee.ImageCollection(arg)
+    
+    if aoi is not None:
+        return col.filterBounds(aoi).mosaic()
+    else:
+        return col.mosaic()
 
 
 def build_fourier_transform(arg: str, aoi: ee.Geometry = None) -> ee.Image:
     """ pre computed dataset """
-    pass
+    col = ee.ImageCollection(arg)
+    
+    if aoi is not None:
+        return col.filterBounds(aoi).mosaic()
+    else:
+        return col.mosaic()
 
 
 def build_stack(*images) -> ee.Image:
