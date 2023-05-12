@@ -1,7 +1,7 @@
 from typing import List, Union
 
 import ee
-from cnwi import opt, rf, sar, trainingd
+from cnwi import datasets, opt, rf, sar, trainingd
 from cnwi import derivatives as d
 from cnwi import sfilters as s
 
@@ -72,15 +72,18 @@ def build_data_cube(arg: str, aoi: ee.Geometry) -> ee.Image:
         map(fall_SAVI).map(spring_tc).map(summer_tc).map(fall_tc).mosaic()
 
 
-def build_sentinel1(col: ee.ImageCollection):
+def build_sentinel1(aoi: ee.Geometry):
     EARLY_SEASON = '2019-04-01', '2019-06-20'
     LATE_SEASON = '2019-06-21', '2019-10-31'
     
-    # select only VV and VH
-    in_col = col.select('V.*')
+    # load S1DV Collection form file
+    
+    # filter collection by the aoi
+    col = datasets.load_s1_dv_dataset().filterBounds(aoi).select('V.*')
+
     # apply spatial filter
     boxcarf = s.boxcar(1)
-    s1_pp1 = in_col.map(boxcarf)
+    s1_pp1 = col.map(boxcarf)
     # add ratio
     ratio = d.Ratio('VV', 'VH')
     s1_pp2 = s1_pp1.map(ratio)
