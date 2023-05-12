@@ -1,3 +1,5 @@
+from typing import Dict, Union
+
 import ee
 
 
