@@ -32,5 +32,13 @@ def test_build_elevation_prebuilt() -> None:
     return None
 
 
+def test_build_fourier_transform_prebuilt() -> None:
+    fourier_transform = eecnwi.build_fourier_transform(
+        arg="projects/fpca-336015/assets/NovaScotia/fourier_transform",
+        aoi=AOI
+    )
+    print(fourier_transform.bandNames().getInfo())
+    return None
+
 if __name__ == '__main__':
-    test_build_elevation_prebuilt()
+    test_build_fourier_transform_prebuilt()
