@@ -40,5 +40,29 @@ def test_build_fourier_transform_prebuilt() -> None:
     print(fourier_transform.bandNames().getInfo())
     return None
 
+
+def test_build_stack() -> None:
+    dc_arg = "projects/fpca-336015/assets/NovaScotia/data_cube" 
+    dc = eecnwi.build_data_cube(
+        arg=dc_arg,
+        aoi=AOI
+    )
+    
+    alos = eecnwi.build_alos()
+    
+    terrain_analysis = eecnwi.build_elevation(
+        arg="projects/fpca-336015/assets/NovaScotia/terrain_analysis",
+        aoi=AOI
+    )
+    
+    fourier_transform = eecnwi.build_fourier_transform(
+        arg="projects/fpca-336015/assets/NovaScotia/fourier_transform",
+        aoi=AOI
+    )
+    
+    stack = eecnwi.build_stack(dc, alos, terrain_analysis, fourier_transform)
+    print(stack.bandNames().getInfo())
+    return None
+
 if __name__ == '__main__':
-    test_build_fourier_transform_prebuilt()
+    test_build_stack()
