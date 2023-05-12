@@ -68,20 +68,38 @@ def build_data_cube(arg: str, aoi: ee.Geometry) -> ee.Image:
         map(fall_SAVI).map(spring_tc).map(summer_tc).map(fall_tc).mosaic()
 
 
-def build_sentinel1(args: List[str]):
+def build_sentinel1(col: ee.ImageCollection):
+    EARLY_SEASON = '2019-04-01', '2019-06-20'
+    LATE_SEASON = '2019-06-21', '2019-10-31'
+    
+    # select only VV and VH
+    in_col = col.select('V.*')
+    # apply spatial filter
+    boxcarf = s.boxcar(1)
+    s1_pp1 = in_col.map(boxcarf)
+    # add ratio
+    ratio = d.Ratio('VV', 'VH')
+    s1_pp2 = s1_pp1.map(ratio)
+    # sperate into early and late season
+    early = s1_pp2.filterDate(*EARLY_SEASON)
+    late = s1_pp2.filterDate(*LATE_SEASON)
+    # mosaic early and late
+    early_mosaic = early.mosaic()
+    late_mosaic = late.mosaic()
+    # concat early and late into one image
+    return ee.Image.cat(early_mosaic, late_mosaic)
+
+
+def build_alos() -> ee.Image:
     pass
 
 
-def build_alos():
-    pass
-
-
-def build_elevation(arg: str):
+def build_elevation(arg: str, aoi: ee.Geometry = None) -> ee.Image:
     """ pre computed dataset """
     pass
 
 
-def build_fourier_transform(arg: str):
+def build_fourier_transform(arg: str, aoi: ee.Geometry = None) -> ee.Image:
     """ pre computed dataset """
     pass
 
