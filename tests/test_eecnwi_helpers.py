@@ -13,6 +13,13 @@ def test_build_data_cube_inputs() -> None:
     
     print(dc.bandNames().getInfo())
 
+
+def test_build_alos_inputs() -> None:
+    alos = eecnwi.build_alos()
+    print(alos.bandNames().getInfo())    
+    return None
+
+
 if __name__ == '__main__':
     ee.Initialize()
-    test_build_data_cube_inputs()
+    test_build_alos_inputs()
