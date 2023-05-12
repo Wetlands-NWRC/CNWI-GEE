@@ -181,6 +181,3 @@ class DataCubeComposite(ee.ImageCollection):
     
     def __init__(self, args):
         super().__init__(args)
-    
-    def filter(self, aoi: Union[ee.Geometry, ee.FeatureCollection]):
-        return self.filter(aoi)
