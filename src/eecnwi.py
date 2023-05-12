@@ -11,13 +11,14 @@ def build_data_cube(arg: str, aoi: ee.Geometry) -> ee.Image:
     """ Handles building data cube collection that can be used downstream """
     
     # construct a base data cube object and filter by the aoi
-    col = opt.DataCubeComposite(arg).filter(aoi)
+    col = opt.DataCubeComposite(arg)
     
     band_prefixs = col.show_band_prefix()
     band_names = col.show_band_names()
     # remove the 60m band
     remove_60 = [i for i in band_names.values() if '60m' not in i]
     band_selc = {k: [_ for _ in remove_60 if k in _] for k in band_prefixs.values()}
+    
     # select by the prefix, then remove any strings that have 60m in it
     names = band_selc.pop('a_spri_b')
     for val in band_selc.values():
@@ -33,7 +34,7 @@ def build_data_cube(arg: str, aoi: ee.Geometry) -> ee.Image:
     
     new_band_names = spring_new + summer_new + fall_new
     
-    col.map(lambda x: x.select(names, new_band_names))
+    col = col.filterBounds(aoi).map(lambda x: x.select(names, new_band_names))
     
     # create the objects to be mapped
     
