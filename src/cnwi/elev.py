@@ -45,7 +45,7 @@ def build_elevation_inpts(dem: ee.Image, aoi: ee.Geometry, ta: bool = True):
     else:
         warnings.warn("Terrain Analysis as been Set to True... Please Note this is very memroy intenseve")
         # do terrain analysis raise warning to the end user
-        gaus_filt = s.gaussian_filter(3)
+        dem_guas = s.gaussian_filter(3)
         pm = s.perona_malik()
         
         rectnalge = build_rectangle(aoi)
