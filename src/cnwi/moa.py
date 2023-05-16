@@ -56,6 +56,7 @@ def moa_calc(dfin: pd.DataFrame, label: str) -> MOATable:
     moa_table = moa_table[['labels', 'rank', 'band', 'scores']]
     return MOATable(moa_table)
 
+
 def plot_moa_dis(moa_scores: MOATable, samples: pd.DataFrame, rank: int = 1, dir: str = None) -> None:
     # TODO need to update this to iterate over all predictors. 
     dir = './plotting' if dir is None else dir
