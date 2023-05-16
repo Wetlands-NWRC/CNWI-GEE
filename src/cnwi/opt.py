@@ -19,11 +19,11 @@ class S2Cloudless(ee.Image):
     
     def __init__(self, aoi, start_date, end_date):
         """ Adapted from here: https://developers.google.com/earth-engine/tutorials/community/sentinel-2-s2cloudless"""
-        s2_sr_cld_col = self._get_s2_sr_cld_col(aoi, start_date, end_date)
-        self.s2_sr = (s2_sr_cld_col.map(self._add_cld_shdw_mask)
+        self.input_col = self._get_s2_sr_cld_col(aoi, start_date, end_date)
+        self.output_col = (self.input_col.map(self._add_cld_shdw_mask)
                              .map(self._apply_cld_shdw_mask))
         super().__init__(self.s2_sr.median(), None)
-    
+
     def _get_s2_sr_cld_col(self, aoi, start_date, end_date):
         # Import and filter S2 SR.
         s2_sr_col = (ee.ImageCollection('COPERNICUS/S2_SR')
