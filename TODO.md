@@ -6,3 +6,4 @@
 5) Move terrain analysis to seperate tool
 6) prep training data tool to work on client  
 7) top level helper functions (Done)
+8) need to add asset creation tooling i.e for moving things from gcp to gee

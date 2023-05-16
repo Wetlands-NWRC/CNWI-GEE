@@ -1,7 +1,7 @@
 from typing import List, Union
 
 import ee
-from cnwi import datasets, opt, rf, sar, trainingd
+from cnwi import datasets, opt, rf, sar, trainingd, acas
 from cnwi import derivatives as d
 from cnwi import sfilters as s
 
@@ -173,5 +173,5 @@ def classify_stack(trained_model, stack: ee.Image) -> ee.Image:
     return stack.classify(trained_model).uint8()
 
 
-def do_accuracy_assessment() -> ee.FeatureCollection:
-    pass
+def do_accuracy_assessment(sample: ee.FeatureCollection, model, class_property: str, label: str) -> ee.FeatureCollection:
+    return acas.independent(sample, model, class_property, label)
