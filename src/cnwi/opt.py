@@ -19,7 +19,7 @@ class S2Cloudless(ee.Image):
     
     def __init__(self, aoi, start_date, end_date):
         """ Adapted from here: https://developers.google.com/earth-engine/tutorials/community/sentinel-2-s2cloudless"""
-        s2_sr_cld_col = self.get_s2_sr_cld_col(aoi, start_date, end_date)
+        s2_sr_cld_col = self._get_s2_sr_cld_col(aoi, start_date, end_date)
         s2_sr_median = (s2_sr_cld_col.map(self._add_cld_shdw_mask)
                              .map(self._apply_cld_shdw_mask)
                              .median())
@@ -100,7 +100,7 @@ class S2Cloudless(ee.Image):
         # Add the final cloud-shadow mask to the image.
         return img_cloud_shadow.addBands(is_cld_shdw)
     
-    def apply_cld_shdw_mask(self, img):
+    def _apply_cld_shdw_mask(self, img):
         # Subset the cloudmask band and invert it so clouds/shadow are 0, else 1.
         not_cld_shdw = img.select('cloudmask').Not()
 
