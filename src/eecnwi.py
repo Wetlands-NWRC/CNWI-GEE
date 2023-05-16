@@ -161,7 +161,11 @@ def build_random_forest_model(number_of_trees: int = 1000) -> rf.RandomForestMod
 
 
 def train_random_forest_model(model: rf.RandomForestModel, training_data, predictors: Union[List[str], ee.List], classProperty: str):
-    return model.train()
+    return model.train(
+        training_data=training_data,
+        predictors=predictors,
+        classProperty=classProperty
+    )
 
 
 # classify_stack
