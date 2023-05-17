@@ -15,3 +15,4 @@
 - [ ] add terrain analysis script tool; standard way of exporting terrain analysis products
 - [ ] put fourier transform into its own sub module
 - [ ] work on cli functionality for project / custom pipeline utils
+- [ ] need to role back to 4.0.1 release. There is a unknown problem with exporting classification images (they get messed up)
