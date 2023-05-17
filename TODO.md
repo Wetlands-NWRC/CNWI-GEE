@@ -9,7 +9,7 @@
 8) need to add asset creation tooling i.e for moving things from gcp to gee
 ----------------------------------------------------------------------
 # TODO v0.0.2
-- [ ] add script tool for prepping training / validation data
+- [x] add script tool for prepping training / validation data
 - [ ] add internal main script for doing standard random forest classification
 - [ ] add fourier transform script tool (to start); standard way of preforming the export
 - [ ] add terrain analysis script tool; standard way of exporting terrain analysis products
