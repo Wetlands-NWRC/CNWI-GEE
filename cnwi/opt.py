@@ -106,3 +106,4 @@ class S2Cloudless(ee.Image):
 
         # Subset reflectance bands and update their masks, return the result.
         return img.select('B.*').updateMask(not_cld_shdw)
+

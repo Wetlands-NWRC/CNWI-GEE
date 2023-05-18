@@ -102,7 +102,13 @@ def prep_data_cube(col: ee.ImageCollection):
     
     new_band_names = spring_new + summer_new + fall_new
     
-    return col.map(lambda x: x.select(concat, new_band_names))
+    # remove the 60m component
+    new_col = col.map(lambda x: x.select(concat, new_band_names))
+    
+    band_names: ee.List = new_col.first().bandNames()
+    band_names_remove_60 = band_names.remove('B1').remove('B1_1').remove('B1_2')
+    
+    return new_col.select(band_names_remove_60) 
 
 
 def build_data_cube_inpts(col: ee.ImageCollection)-> ee.Image:
