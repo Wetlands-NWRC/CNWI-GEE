@@ -35,10 +35,9 @@ class RandomForestModel:
         Returns:
             ee.Classifier: a tained ee.Classifier Object
         """
-
         return self.classifier.train(
             features=training_data,
             classProperty=classProperty,
             inputProperties=predictors
-        )  
-        
+        )    
+

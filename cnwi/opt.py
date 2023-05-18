@@ -1,6 +1,5 @@
-from typing import Dict, Union
-
 import ee
+
 
 
 class Sentinel2SR(ee.ImageCollection):
@@ -8,6 +7,7 @@ class Sentinel2SR(ee.ImageCollection):
     
     def __init__(self):
         super().__init__(self.ARGS)
+
 
 
 class S2Cloudless(ee.Image):
@@ -19,11 +19,12 @@ class S2Cloudless(ee.Image):
     
     def __init__(self, aoi, start_date, end_date):
         """ Adapted from here: https://developers.google.com/earth-engine/tutorials/community/sentinel-2-s2cloudless"""
-        self.input_col = self._get_s2_sr_cld_col(aoi, start_date, end_date)
-        self.output_col = (self.input_col.map(self._add_cld_shdw_mask)
-                             .map(self._apply_cld_shdw_mask))
-        super().__init__(self.output_col.median(), None)
-
+        s2_sr_cld_col = self.get_s2_sr_cld_col(aoi, start_date, end_date)
+        s2_sr_median = (s2_sr_cld_col.map(self._add_cld_shdw_mask)
+                             .map(self._apply_cld_shdw_mask)
+                             .median())
+        super().__init__(s2_sr_median, None)
+    
     def _get_s2_sr_cld_col(self, aoi, start_date, end_date):
         # Import and filter S2 SR.
         s2_sr_col = (ee.ImageCollection('COPERNICUS/S2_SR')
@@ -99,86 +100,9 @@ class S2Cloudless(ee.Image):
         # Add the final cloud-shadow mask to the image.
         return img_cloud_shadow.addBands(is_cld_shdw)
     
-    def _apply_cld_shdw_mask(self, img):
+    def apply_cld_shdw_mask(self, img):
         # Subset the cloudmask band and invert it so clouds/shadow are 0, else 1.
         not_cld_shdw = img.select('cloudmask').Not()
 
         # Subset reflectance bands and update their masks, return the result.
         return img.select('B.*').updateMask(not_cld_shdw)
-
-    def get_image_collection(self):
-        return self.s2_sr
-
-class DataCubeComposite(ee.ImageCollection):
-    BANDS = {
-        0: 'a_spri_b01_60m',
-        1: 'a_spri_b02_10m',
-        2: 'a_spri_b03_10m',
-        3: 'a_spri_b04_10m',
-        4: 'a_spri_b05_20m',
-        5: 'a_spri_b06_20m',
-        6: 'a_spri_b07_20m',
-        7: 'a_spri_b08_10m',
-        8: 'a_spri_b08a_20m',
-        9: 'a_spri_b11_20m',
-        10: 'a_spri_b12_20m',
-        11: 'a_spri_doy_y1',
-        12: 'a_spri_doy_y2',
-        13: 'a_spri_imgyear_y1',
-        14: 'a_spri_imgyear_y2',
-        15: 'a_spri_weight_y2',
-        16: 'a_spri_weight_y2_base',
-        17: 'a_spri_weight_y2_swiradj',
-        18: 'b_summ_b01_60m',
-        19: 'b_summ_b02_10m',
-        20: 'b_summ_b03_10m',
-        21: 'b_summ_b04_10m',
-        22: 'b_summ_b05_20m',
-        23: 'b_summ_b06_20m',
-        24: 'b_summ_b07_20m',
-        25: 'b_summ_b08_10m',
-        26: 'b_summ_b08a_20m',
-        27: 'b_summ_b11_20m',
-        28: 'b_summ_b12_20m',
-        29: 'b_summ_doy_y1',
-        30: 'b_summ_doy_y2',
-        31: 'b_summ_imgyear_y1',
-        32: 'b_summ_imgyear_y2',
-        33: 'b_summ_weight_y2',
-        34: 'b_summ_weight_y2_base',
-        35: 'b_summ_weight_y2_swiradj',
-        36: 'c_fall_b01_60m',
-        37: 'c_fall_b02_10m',
-        38: 'c_fall_b03_10m',
-        39: 'c_fall_b04_10m',
-        40: 'c_fall_b05_20m',
-        41: 'c_fall_b06_20m',
-        42: 'c_fall_b07_20m',
-        43: 'c_fall_b08_10m',
-        44: 'c_fall_b08a_20m',
-        45: 'c_fall_b11_20m',
-        46: 'c_fall_b12_20m',
-        47: 'c_fall_doy_y1',
-        48: 'c_fall_doy_y2',
-        49: 'c_fall_imgyear_y1',
-        50: 'c_fall_imgyear_y2',
-        51: 'c_fall_weight_y2',
-        52: 'c_fall_weight_y2_base',
-        53: 'c_fall_weight_y2_swiradj',
-    }
-    PREFIX = {
-        'spring': 'a_spri_b',
-        'summer': 'b_summ_b',
-        'fall': 'c_fall_b'
-    }
-    
-    @classmethod
-    def show_band_prefix(cls) -> Dict[int, str]:
-        return cls.PREFIX
-
-    @classmethod
-    def show_band_names(cls) -> Dict[int, str]:
-        return cls.BANDS
-    
-    def __init__(self, args):
-        super().__init__(args)

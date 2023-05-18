@@ -1,8 +1,6 @@
-from importlib import resources
 from dataclasses import dataclass, field
 from typing import List
 
-import ee
 
 @dataclass(frozen=True)
 class NovaScotia:
@@ -49,25 +47,3 @@ class PeaceWilliston:
         "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015528_20180913T015553_012690_0176B4_0EB4",
         "COPERNICUS/S1_GRD/S1B_IW_GRDH_1SDV_20180913T015553_20180913T015613_012690_0176B4_EB44",
     ])
-
-
-def _get_s1_assets_file() -> str:
-    with resources.path("cnwi.data", "assets.txt") as f:
-        file_path = f
-    return file_path
-
-
-def load_s1_dv_dataset() -> ee.ImageCollection:
-    PREFIX = 'COPERNICUS/S1_GRD'
-    with open(_get_s1_assets_file()) as f:
-        lines = f.readlines()
-        assets = []
-        for line in lines:
-            if PREFIX in line:
-                strip = line.strip()
-                assets.append(strip)
-            else:
-                continue
-
-    return ee.ImageCollection(assets)
-        

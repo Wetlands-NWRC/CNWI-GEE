@@ -131,8 +131,8 @@ def fit(model: model) -> ee.ImageCollection:
     return model.harmonics.map(fit_wrapper)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def fourier(ee_object: ee.ImageCollection, modes: int = 5, omega: float = 1.5, 
-            variable: d._RasterCalculator = None) -> FourierImage:
+def fourier(target_aoi: ee.Geometry, modes: int = 3, cloud_pix_percent: int = 20,
+            variable: d._RasterCalculator = None, date_range: Tuple[str] = None) -> FourierImage:
     """Applys fourier transform to defined image collection. Image Collection needs to be filtered 
     by start and end date, as well have a cloud mask applied. It also needs to have NDVI band in the 
     stack
@@ -142,18 +142,37 @@ def fourier(ee_object: ee.ImageCollection, modes: int = 5, omega: float = 1.5,
         modes (int, optional): number of modes to include. Defaults to 5.
         omega (float, optional): _description_. Defaults to 1.5.
     """
-    # construct the input collection
-   
     
-    # TODO add date minMax checker, if greater than 365 days use omega of 1
-    variable = d.NDVI() if variable is None else variable
-    time_series = ee_object.map(variable)\
+    def cloud_mask(element: ee.Image):
+        qa = element.select('QA60')
+        cloudBitMask = 1 << 10
+        cirrusBitMask = 1 << 11
+        mask = qa.bitwiseAnd(cloudBitMask).eq(0)\
+            .And(qa.bitwiseAnd(cirrusBitMask).eq(0))
+        return element.updateMask(mask)
+    
+    def min_max(*dates):
+        """ Calculates the time dif in days """
+        t1, t2 = dates
+        dif = ee.Date(t1).difference(ee.Date(t2), 'day').abs()
+        return dif.gt(365)   
+    
+    DATES = ('2017', '2022') if date_range is None else date_range
+    VARIABLE = d.NDVI() if variable is None else variable
+    OMEGA = 1 if min_max(*DATES) else 1.5
+    
+    t1, t2 = DATES
+    # construct the input collection
+    time_series = Sentinel2SR().filterBounds(target_aoi).filterDate(str(t1), str(t2))\
+        .filter(f'CLOUDY_PIXEL_PERCENTAGE > {cloud_pix_percent}')\
+        .map(cloud_mask)\
+        .map(VARIABLE)\
         .map(add_constant)\
-        .map(add_time(omega=omega))\
-
+        .map(add_time(omega=OMEGA))
+    
     fourier_model = model(
         ee_object=time_series,
         modes=modes,
-        dependent_var=variable.NAME
+        dependent_var=VARIABLE.NAME
     )
     return FourierImage(model=fourier_model, ee_image_collection=time_series)

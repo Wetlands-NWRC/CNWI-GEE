@@ -33,7 +33,7 @@ def prep_training_data(col: ee.FeatureCollection, class_property: str = None) ->
         lookup = ee.Dictionary.fromLists(classes, values)
         col = col.map(lambda x: x.set('value', lookup.get(x.get(class_property))))
     # add randomColumn
-    return col.map(_insert_xy).sort('value')
+    return col.map(_insert_xy)
 
 
 def generate_samples(col: ee.FeatureCollection, stack: ee.Image, scale: int = 10, 
