@@ -1,3 +1,4 @@
+import os
 import json
 from typing import Dict, Any, List
 
@@ -129,5 +130,28 @@ class Overall(pd.DataFrame):
         super().__init__(data=data, columns=columns)
 
 
-def build_metirc_tables(data: Dict[Any, Any], filename: str, dir: str = None, file_name_prefix: str = None):
-    pass
+def metric_tables_to_csv(infile: str, outdir: str, confusion_n: str = None, producers_n: str = None,
+                        consumers_n: str = None, overall_n: str = None) -> None:
+    """
+    infile: represents the geojson outputed from google earth enigne
+    
+    out dir represents where you would like to write metrics to
+    """
+    
+    consumers_n = 'confusion_matrix.csv' if consumers_n is None else consumers_n
+    producers_n = 'confusion_matrix.csv' if producers_n is None else producers_n
+    overall_n = 'confusion_matrix.csv' if overall_n is None else overall_n
+    confusion_n = 'confusion_matrix.csv' if confusion_n is None else confusion_n
+    
+    
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    
+    with open(infile) as f:
+        data = json.load(f)
+    
+    ConfusionMatrix(data).to_csv(os.path.join(outdir, confusion_n))
+    Consumers(data).to_csv(os.path.join(outdir, consumers_n))
+    Producers(data).to_csv(os.path.join(outdir, producers_n))
+    Overall(data).to_csv(os.path.join(outdir, overall_n))
+    return None
