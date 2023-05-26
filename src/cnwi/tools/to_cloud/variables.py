@@ -84,17 +84,17 @@ def fourier_transform_2_cloud(grid: gpd.GeoDataFrame, bucket: str, file_prefix: 
         )
         task.start()
     print("Exports: Running on Cloud")
-    if not os.path.exits("./logging"):
-        os.path.makedirs("./logging")
+    if not os.path.exists("../logging"):
+        os.makedirs("../logging")
     # step into the task monitoring routine
     tasks = ee.batch.Task.list()[:len(grid_ids)]
     ids = [task.id for task in tasks]
     ids.reverse()
     gdf2['FOURIER_TASK_IDS'] = ids
-    gdf.to_file('./logging/fourier-grid.geojson', driver='GeoJSON')
+    gdf2.to_file('../logging/fourier-grid.geojson', driver='GeoJSON')
     while any([task.state in ['READY', 'RUNNING'] for task in tasks]):
         time.sleep(10)
-        tasks = [task for task in ee.batch.Task.list() if task.id in gdf2['FOURIER_IDS'].tolist()]
+        tasks = [task for task in ee.batch.Task.list() if task.id in gdf2['FOURIER_TASK_IDS'].tolist()]
 
     print("Export: Complete")
 
@@ -137,13 +137,13 @@ def terrain_analysis_2_cloud(grid: gpd.GeoDataFrame, bucket: str, file_prefix: s
     # gets the inital state of the tasks
     print("Exports: Running on Cloud")
     # step into the task monitoring routine
-    if not os.path.exits("./logging"):
-        os.path.makedirs("./logging")
+    if not os.path.exists("../logging"):
+        os.makedirs("../logging")
     tasks = ee.batch.Task.list()[:len(grid_ids)]
     ids = [task.id for task in tasks]
     ids.reverse()
     gdf2['TERRAIN_TASK_IDS'] = ids
-    gdf.to_file('./logging/terrain-grid.geojson', driver='GeoJSON')
+    gdf.to_file('../logging/terrain-grid.geojson', driver='GeoJSON')
     while any([task.state in ['READY', 'RUNNING'] for task in tasks]):
         time.sleep(10)
         tasks = [task for task in ee.batch.Task.list() if task.id in gdf2['TERRAIN_TASK_IDS']\
