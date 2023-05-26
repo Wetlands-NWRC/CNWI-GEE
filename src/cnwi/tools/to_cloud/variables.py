@@ -143,7 +143,7 @@ def terrain_analysis_2_cloud(grid: gpd.GeoDataFrame, bucket: str, file_prefix: s
     ids = [task.id for task in tasks]
     ids.reverse()
     gdf2['TERRAIN_TASK_IDS'] = ids
-    gdf.to_file('../logging/terrain-grid.geojson', driver='GeoJSON')
+    gdf2.to_file('../logging/terrain-grid.geojson', driver='GeoJSON')
     while any([task.state in ['READY', 'RUNNING'] for task in tasks]):
         time.sleep(10)
         tasks = [task for task in ee.batch.Task.list() if task.id in gdf2['TERRAIN_TASK_IDS']\
