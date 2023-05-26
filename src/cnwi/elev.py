@@ -50,7 +50,7 @@ def build_elevation_inpts(dem: ee.Image, aoi: ee.Geometry, ta: bool = True):
         
         rectnalge = build_rectangle(aoi)
 
-        dem_guas = dem_guas(dem)
+        dem_guas = gaus_filt(dem)
         ta_gauss = tagee.terrainAnalysis(dem_guas, rectnalge).select(GUASSIAN_BANDS)
         
         dem_pm = pm(dem)
