@@ -1,4 +1,5 @@
 # 1.0.2
 
 ## Changed
-- cloud tools variable generator functions file path constructors changed from /grid_id/aoi_name to /aoi_name/grid_id
+- fourier transform tool cloud export file name prefix updated to aoi_name/grid_id/name
+- terrain analysis tool cloud export file name prefix updated to aoi_name/grid_id/name, updated id to point to a string from a built in function
